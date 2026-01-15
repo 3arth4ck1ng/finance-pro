@@ -1,0 +1,2892 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Finance Pro - Sistema de Gestão Financeira</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Sistema profissional de gestão financeira pessoal para Android e iOS">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Finance Pro">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+        h1 { font-size: 3rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, #f1f5f9, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: #94a3b8; font-size: 1.125rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
+        .month-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(30,41,59,0.7);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(148,163,184,0.2);
+        }
+        .month-btn {
+            background: rgba(59,130,246,0.2);
+            border: 1px solid rgba(59,130,246,0.3);
+            color: #3b82f6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .month-btn:hover { background: rgba(59,130,246,0.3); transform: scale(1.05); }
+        .month-display { font-weight: 700; font-size: 1.125rem; min-width: 150px; text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        .card {
+            background: rgba(30,41,59,0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(148,163,184,0.1);
+            border-radius: 24px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(59,130,246,0.15); }
+        .card-label { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.5rem; font-weight: 600; }
+        .card-value { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .badge-success { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
+        .badge-warning { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
+        .badge-info { background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.2); }
+        .badge-purple { background: rgba(139,92,246,0.15); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); }
+        .badge-danger { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+        .list-item {
+            background: rgba(30,41,59,0.4);
+            border: 1px solid rgba(148,163,184,0.08);
+            padding: 1rem;
+            border-radius: 16px;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .list-item:hover { background: rgba(30,41,59,0.6); transform: translateX(4px); }
+        .section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(148,163,184,0.2);
+            padding-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .tab {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+        .tab:hover { background: rgba(59,130,246,0.1); color: #f1f5f9; }
+        .tab.active { background: rgba(59,130,246,0.15); color: #3b82f6; }
+        .hidden { display: none; }
+        .btn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.875rem;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(59,130,246,0.4); }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.8125rem; }
+        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .btn-danger:hover { box-shadow: 0 8px 30px rgba(239,68,68,0.4); }
+        .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .btn-warning:hover { box-shadow: 0 8px 30px rgba(245,158,11,0.4); }
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
+        .btn-success:hover { box-shadow: 0 8px 30px rgba(16,185,129,0.4); }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: #1e293b;
+            border: 1px solid rgba(148,163,184,0.2);
+            border-radius: 24px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #94a3b8;
+        }
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.875rem;
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(148,163,184,0.2);
+            border-radius: 12px;
+            color: #f1f5f9;
+            font-size: 1rem;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: rgba(59,130,246,0.15);
+        }
+        .action-buttons { display: flex; gap: 0.5rem; }
+        
+        /* GARANTIR CLICABILIDADE DOS BOTÕES */
+        .action-buttons button {
+            pointer-events: auto !important;
+            position: relative !important;
+            z-index: 10 !important;
+            cursor: pointer !important;
+        }
+        
+        /* Ícones SVG nos botões */
+        .btn-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+            pointer-events: none; /* Permitir clique passar pelo SVG */
+        }
+        
+        /* Tooltips elegantes */
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        
+        .tooltip::before {
+            content: '';
+            position: absolute;
+            bottom: calc(100% + 2px);
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 999;
+        }
+        
+        .tooltip:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+        
+        .tooltip:hover::before {
+            opacity: 1;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(148,163,184,0.1);
+            border-radius: 100px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            border-radius: 100px;
+            transition: width 0.5s;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+        .alert {
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .alert-success {
+            background: rgba(16,185,129,0.1);
+            border-color: rgba(16,185,129,0.3);
+            color: #10b981;
+        }
+        .poupanca-card {
+            background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(236,72,153,0.1));
+            border: 2px solid rgba(139,92,246,0.3);
+        }
+        .meta-realizado {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: rgba(30,41,59,0.5);
+            border-radius: 12px;
+        }
+        .divida-receber {
+            border-left: 4px solid #10b981;
+        }
+        .divida-pagar {
+            border-left: 4px solid #ef4444;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+        }
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* ========================================
+           PWA - OTIMIZAÇÕES MOBILE
+           ======================================== */
+        
+        /* Botão de instalação PWA */
+        #install-button {
+            display: none;
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(16,185,129,0.4);
+            z-index: 9999;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            
+            h1 { font-size: 2rem; }
+            
+            .subtitle {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .month-selector {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                padding: 1.25rem;
+            }
+            
+            .card-value {
+                font-size: 2rem;
+            }
+            
+            .tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            
+            .tabs::-webkit-scrollbar {
+                display: none;
+            }
+            
+            .tab {
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            
+            .list-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .list-item > div:last-child {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .action-buttons {
+                flex-wrap: nowrap;
+            }
+            
+            .btn {
+                padding: 0.875rem 1.25rem;
+                font-size: 1rem;
+            }
+            
+            .btn-sm {
+                padding: 0.75rem 1rem;
+                min-height: 44px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 1.5rem;
+            }
+            
+            .form-input,
+            .form-select {
+                padding: 1rem;
+                font-size: 1rem;
+                min-height: 52px;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+            
+            .section-title {
+                font-size: 1.25rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .section-title button {
+                width: 100%;
+            }
+            
+            #install-button {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.875rem 1.25rem;
+                font-size: 0.875rem;
+            }
+            
+            /* Touch-friendly targets */
+            .month-btn {
+                min-width: 44px;
+                min-height: 44px;
+                padding: 0.75rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 { font-size: 1.75rem; }
+            
+            .card-value { font-size: 1.75rem; }
+            
+            .badge {
+                font-size: 0.75rem;
+                padding: 0.375rem 0.75rem;
+            }
+        }
+        
+        /* Landscape mode */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .modal-content {
+                max-height: 85vh;
+            }
+        }
+        
+        /* iOS específico - Safe Area */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Finance Pro</h1>
+            <div class="subtitle">
+                <span>Sistema Inteligente de Gestão Financeira</span>
+                <div class="month-selector">
+                    <button class="month-btn" onclick="changeMonth(-1)">◀</button>
+                    <div class="month-display" id="current-month"></div>
+                    <button class="month-btn" onclick="changeMonth(1)">▶</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="tabs">
+           <button class="tab active" onclick="showTab('dashboard', event)">📊 Dashboard</button>
+            <button class="tab" onclick="showTab('receitas', event)">💰 Receitas</button>
+            <button class="tab" onclick="showTab('poupanca', event)">💎 Poupança</button>
+            <button class="tab" onclick="showTab('gastos-fixos', event)">💳 Gastos Fixos</button>
+            <button class="tab" onclick="showTab('assinaturas', event)">📺 Assinaturas</button>
+            <button class="tab" onclick="showTab('parcelamentos', event)">📦 Parcelamentos</button>
+            <button class="tab" onclick="showTab('dividas', event)">💸 Dívidas</button>
+            <button class="tab" onclick="showTab('graficos', event)">📈 Gráficos</button>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="dashboard" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <div class="card-label">RECEITAS TOTAIS</div>
+                    <div class="card-value" style="color: #10b981;" id="total-receitas">R$ 0,00</div>
+                    <div class="badge badge-success">📈 Dupla renda</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">DESPESAS TOTAIS</div>
+                    <div class="card-value" style="color: #f59e0b;" id="total-despesas">R$ 0,00</div>
+                    <div class="badge badge-warning" id="perc-despesas">⚠️ 0% da renda</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">SALDO DO MÊS</div>
+                    <div class="card-value" id="saldo-mes">R$ 0,00</div>
+                    <div class="badge badge-success" id="saldo-status">✓ Positivo</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">GUARDADO NO MÊS</div>
+                    <div class="card-value" style="color: #8b5cf6;" id="total-guardado">R$ 0,00</div>
+                    <div class="badge badge-purple" id="perc-guardado">0% guardado</div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <h3 class="section-title">📋 Composição de Despesas</h3>
+                    <div class="list-item">
+                        <div>
+                            <div style="font-weight: 600;">Gastos Fixos</div>
+                            <div style="font-size: 0.875rem; color: #94a3b8;" id="perc-fixos">0% do total</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;" id="valor-fixos">R$ 0,00</div>
+                    </div>
+                    <div class="list-item">
+                        <div>
+                            <div style="font-weight: 600;">Assinaturas</div>
+                            <div style="font-size: 0.875rem; color: #94a3b8;" id="perc-assinaturas">0% do total</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;" id="valor-assinaturas">R$ 0,00</div>
+                    </div>
+                    <div class="list-item">
+                        <div>
+                            <div style="font-weight: 600;">Parcelamentos</div>
+                            <div style="font-size: 0.875rem; color: #94a3b8;" id="perc-parcelamentos">0% do total</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;" id="valor-parcelamentos">R$ 0,00</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="section-title">💸 Balanço de Dívidas</h3>
+                    <div class="list-item divida-receber">
+                        <div>
+                            <div style="font-weight: 600;">A Receber</div>
+                            <div style="font-size: 0.875rem; color: #94a3b8;">Valores que devem para você</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;" id="total-receber">R$ 0,00</div>
+                    </div>
+                    <div class="list-item divida-pagar">
+                        <div>
+                            <div style="font-weight: 600;">A Pagar</div>
+                            <div style="font-size: 0.875rem; color: #94a3b8;">Valores que você deve</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #ef4444;" id="total-pagar">R$ 0,00</div>
+                    </div>
+                    <div class="list-item" style="border: 2px solid rgba(59,130,246,0.3);">
+                        <div>
+                            <div style="font-weight: 600;">Saldo Líquido</div>
+                            <div style="font-size: 0.875rem; color: #94a3b8;">Receber - Pagar</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #3b82f6;" id="saldo-dividas">R$ 0,00</div>
+                    </div>
+                </div>
+                <div class="card" style="background: linear-gradient(135deg, rgba(236,72,153,0.1), rgba(139,92,246,0.1)); border: 2px solid rgba(236,72,153,0.3);">
+                    <h3 class="section-title">📦 Status dos Parcelamentos</h3>
+                    <div class="list-item" style="background: rgba(59,130,246,0.1);">
+                        <div>
+                            <div style="font-weight: 600;">Parcelamentos Ativos</div>
+                            <div style="font-size: 0.875rem; color: #94a3b8;">Total de itens parcelados</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #3b82f6;" id="total-parcelamentos-ativos">0</div>
+                    </div>
+                    <div class="list-item" style="background: rgba(16,185,129,0.1);">
+                        <div>
+                            <div style="font-weight: 600;">Finalizando Este Mês</div>
+                            <div style="font-size: 0.875rem; color: #94a3b8;">Última parcela</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;" id="total-finalizando">0</div>
+                    </div>
+                    <div class="list-item" style="background: rgba(139,92,246,0.1);">
+                        <div>
+                            <div style="font-weight: 600;">Progresso Médio</div>
+                            <div style="font-size: 0.875rem; color: #94a3b8;">Conclusão geral</div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #8b5cf6;" id="progresso-medio">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RECEITAS -->
+        <div id="receitas" class="tab-content hidden">
+            <div class="card">
+                <h3 class="section-title">
+                    💰 Receitas
+                   <button class="btn btn-sm" onclick="openAddReceita()">+ Adicionar</button>
+                </h3>
+                <div id="lista-receitas"></div>
+            </div>
+        </div>
+
+        <!-- POUPANÇA -->
+        <div id="poupanca" class="tab-content hidden">
+            <div class="card" style="margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 class="section-title" style="margin-bottom: 0;">💎 Metas de Poupança</h3>
+                   <button class="btn btn-sm btn-success" onclick="openAddPessoaPoupanca()">+ Adicionar Pessoa</button>
+                </div>
+            </div>
+
+            <div class="grid" id="lista-poupanca"></div>
+
+            <div class="card" style="background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15)); border: 2px solid rgba(59,130,246,0.3);">
+                <h3 class="section-title">💰 Total Geral</h3>
+                <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div style="text-align: center;">
+                        <div class="card-label">META TOTAL</div>
+                        <div class="card-value" style="color: #3b82f6; font-size: 2rem;" id="total-meta-geral">R$ 0,00</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div class="card-label">TOTAL GUARDADO</div>
+                        <div class="card-value" style="color: #10b981; font-size: 2rem;" id="total-realizado-geral">R$ 0,00</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div class="card-label">PROGRESSO</div>
+                        <div class="card-value" style="color: #8b5cf6; font-size: 2rem;" id="total-percent-geral">0%</div>
+                    </div>
+                </div>
+                <div class="progress-bar" style="height: 16px; margin-top: 1rem;">
+                    <div class="progress-fill" id="total-progress-geral" style="width: 0%; background: linear-gradient(90deg, #10b981, #3b82f6);"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="section-title">📊 Evolução da Poupança</h3>
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="chart-poupanca-evolucao"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- GASTOS FIXOS -->
+        <div id="gastos-fixos" class="tab-content hidden">
+            <div class="card">
+                <h3 class="section-title">
+                    💳 Gastos Fixos
+                    <button class="btn btn-sm" onclick="openAddGasto()">+ Adicionar</button>
+                </h3>
+                <div id="lista-gastos"></div>
+            </div>
+        </div>
+
+        <!-- ASSINATURAS -->
+        <div id="assinaturas" class="tab-content hidden">
+            <div class="card">
+                <h3 class="section-title">
+                    📺 Assinaturas
+                    <button class="btn btn-sm" onclick="openAddAssinatura()">+ Adicionar</button>
+                </h3>
+                <div id="lista-assinaturas"></div>
+                <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(139,92,246,0.1); border-radius: 12px; display: flex; justify-content: space-between;">
+                    <span style="font-weight: 600;">Total Assinaturas</span>
+                    <span style="font-size: 1.5rem; font-weight: 800; color: #8b5cf6;" id="total-assinaturas-display">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PARCELAMENTOS -->
+        <div id="parcelamentos" class="tab-content hidden">
+            <div class="card">
+                <h3 class="section-title">
+                    📦 Parcelamentos
+                    <button class="btn btn-sm" onclick="openAddParcelamento()">+ Adicionar</button>
+                </h3>
+                <div id="lista-parcelamentos"></div>
+                <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(59,130,246,0.1); border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 0.875rem; color: #94a3b8;">IMPACTO MENSAL TOTAL</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: #3b82f6;" id="total-parcelamentos-display">R$ 0,00</div>
+                    </div>
+                    <div class="badge badge-warning" id="perc-parcelamentos-renda">0% da renda</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DÍVIDAS -->
+        <div id="dividas" class="tab-content hidden">
+            <div class="grid-2">
+                <div class="card" style="border-left: 4px solid #10b981;">
+                    <h3 class="section-title">
+                        💚 A Receber
+                       <button class="btn btn-sm btn-success" onclick="openAddDividaReceber()">+ Adicionar</button>
+                    </h3>
+                    <div id="lista-dividas-receber"></div>
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(16,185,129,0.1); border-radius: 12px; display: flex; justify-content: space-between;">
+                        <span style="font-weight: 600;">Total a Receber</span>
+                        <span style="font-size: 1.5rem; font-weight: 800; color: #10b981;" id="total-receber-display">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #ef4444;">
+                    <h3 class="section-title">
+                        ❤️ A Pagar
+                        <button class="btn btn-sm btn-danger" onclick="openAddDividaPagar()">+ Adicionar</button>
+                    </h3>
+                    <div id="lista-dividas-pagar"></div>
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(239,68,68,0.1); border-radius: 12px; display: flex; justify-content: space-between;">
+                        <span style="font-weight: 600;">Total a Pagar</span>
+                        <span style="font-size: 1.5rem; font-weight: 800; color: #ef4444;" id="total-pagar-display">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRÁFICOS -->
+        <div id="graficos" class="tab-content hidden">
+            <div class="grid">
+                <div class="card">
+                    <h3 class="section-title">🥧 Distribuição de Despesas</h3>
+                    <div class="chart-container">
+                        <canvas id="chart-despesas"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="section-title">📊 Receitas vs Despesas</h3>
+                    <div class="chart-container">
+                        <canvas id="chart-barras"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="section-title">📈 Evolução Mensal</h3>
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="chart-evolucao"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAIS (omitidos por brevidade - continuam os mesmos) -->
+    
+    <!-- Modal Pessoa Poupança -->
+    <div id="modal-add-pessoa-poupanca" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;" id="modal-pessoa-poupanca-title">Adicionar Pessoa - Poupança</h3>
+            <form onsubmit="savePessoaPoupanca(event)">
+                <input type="hidden" id="pessoa-poupanca-id">
+                <div class="form-group">
+                    <label class="form-label">Nome</label>
+                    <input type="text" class="form-input" id="pessoa-poupanca-nome" placeholder="Ex: João, Maria..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Meta do Mês (R$)</label>
+                    <input type="number" step="0.01" class="form-input" id="pessoa-poupanca-meta" placeholder="0,00" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Realizado (R$)</label>
+                    <input type="number" step="0.01" class="form-input" id="pessoa-poupanca-realizado" placeholder="0,00" required>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 Salvar</button>
+                    <button type="button" class="btn btn-danger" style="flex: 1;" onclick="closeModal('add-pessoa-poupanca')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Dívida a Receber -->
+    <div id="modal-add-divida-receber" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;" id="modal-divida-receber-title">Adicionar Dívida a Receber</h3>
+            <form onsubmit="saveDividaReceber(event)">
+                <input type="hidden" id="divida-receber-id">
+                <div class="form-group">
+                    <label class="form-label">Pessoa</label>
+                    <input type="text" class="form-input" id="divida-receber-pessoa" placeholder="Quem deve para você?" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Descrição</label>
+                    <input type="text" class="form-input" id="divida-receber-descricao" placeholder="Motivo da dívida" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Valor (R$)</label>
+                    <input type="number" step="0.01" class="form-input" id="divida-receber-valor" placeholder="0,00" required>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">Salvar</button>
+                    <button type="button" class="btn btn-danger" style="flex: 1;" onclick="closeModal('add-divida-receber')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Dívida a Pagar -->
+    <div id="modal-add-divida-pagar" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;" id="modal-divida-pagar-title">Adicionar Dívida a Pagar</h3>
+            <form onsubmit="saveDividaPagar(event)">
+                <input type="hidden" id="divida-pagar-id">
+                <div class="form-group">
+                    <label class="form-label">Pessoa</label>
+                    <input type="text" class="form-input" id="divida-pagar-pessoa" placeholder="Para quem você deve?" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Descrição</label>
+                    <input type="text" class="form-input" id="divida-pagar-descricao" placeholder="Motivo da dívida" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Valor (R$)</label>
+                    <input type="number" step="0.01" class="form-input" id="divida-pagar-valor" placeholder="0,00" required>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn" style="flex: 1;">Salvar</button>
+                    <button type="button" class="btn btn-danger" style="flex: 1;" onclick="closeModal('add-divida-pagar')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Receita -->
+    <div id="modal-add-receita" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;" id="modal-receita-title">Adicionar Receita</h3>
+            <form onsubmit="saveReceita(event)">
+                <input type="hidden" id="receita-id">
+                <div class="form-group">
+                    <label class="form-label">Fonte</label>
+                    <input type="text" class="form-input" id="receita-fonte" placeholder="Ex: Salário, Freelance..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Valor (R$)</label>
+                    <input type="number" step="0.01" class="form-input" id="receita-valor" placeholder="0,00" required>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn" style="flex: 1;">Salvar</button>
+                    <button type="button" class="btn btn-danger" style="flex: 1;" onclick="closeModal('add-receita')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Gasto -->
+    <div id="modal-add-gasto" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;" id="modal-gasto-title">Adicionar Gasto Fixo</h3>
+            <form onsubmit="saveGasto(event)">
+                <input type="hidden" id="gasto-id">
+                <div class="form-group">
+                    <label class="form-label">Categoria</label>
+                    <input type="text" class="form-input" id="gasto-categoria" placeholder="Ex: Aluguel, Luz..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Macro</label>
+                    <select class="form-select" id="gasto-macro" required>
+                        <option value="">Selecione...</option>
+                        <option value="Moradia">Moradia</option>
+                        <option value="Serviços">Serviços</option>
+                        <option value="Tributos">Tributos</option>
+                        <option value="Pets">Pets</option>
+                        <option value="Alimentação">Alimentação</option>
+                        <option value="Transporte">Transporte</option>
+                        <option value="Saúde">Saúde</option>
+                        <option value="Educação">Educação</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Responsável</label>
+                    <select class="form-select" id="gasto-resp">
+                        <option value="Pessoa 1">Pessoa 1</option>
+                        <option value="Pessoa 2">Pessoa 2</option>
+                        <option value="Ambos">Ambos</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Valor (R$)</label>
+                    <input type="number" step="0.01" class="form-input" id="gasto-valor" placeholder="0,00" required>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn" style="flex: 1;">Salvar</button>
+                    <button type="button" class="btn btn-danger" style="flex: 1;" onclick="closeModal('add-gasto')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Assinatura -->
+    <div id="modal-add-assinatura" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;" id="modal-assinatura-title">Adicionar Assinatura</h3>
+            <form onsubmit="saveAssinatura(event)">
+                <input type="hidden" id="assinatura-id">
+                <div class="form-group">
+                    <label class="form-label">Serviço</label>
+                    <input type="text" class="form-input" id="assinatura-servico" placeholder="Ex: Netflix, Spotify..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Valor Mensal (R$)</label>
+                    <input type="number" step="0.01" class="form-input" id="assinatura-valor" placeholder="0,00" required>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn" style="flex: 1;">Salvar</button>
+                    <button type="button" class="btn btn-danger" style="flex: 1;" onclick="closeModal('add-assinatura')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Parcelamento -->
+    <div id="modal-add-parcelamento" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1.5rem; font-size: 1.5rem;" id="modal-parcelamento-title">Adicionar Parcelamento</h3>
+            <form onsubmit="saveParcelamento(event)">
+                <input type="hidden" id="parc-id">
+                <div class="form-group">
+                    <label class="form-label">Item</label>
+                    <input type="text" class="form-input" id="parc-item" placeholder="Ex: TV, Celular..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Parcela Atual</label>
+                    <input type="number" class="form-input" id="parc-atual" placeholder="1" required min="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Total de Parcelas</label>
+                    <input type="number" class="form-input" id="parc-total" placeholder="12" required min="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Valor da Parcela (R$)</label>
+                    <input type="number" step="0.01" class="form-input" id="parc-valor" placeholder="0,00" required>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn" style="flex: 1;">Salvar</button>
+                    <button type="button" class="btn btn-danger" style="flex: 1;" onclick="closeModal('add-parcelamento')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let charts = {};
+        
+        // ========================================
+        // ESTRUTURA DE DADOS - ARQUITETURA DEFINITIVA
+        // ========================================
+        
+        // REGRAS MESTRES com histórico de versões
+        let regrasMestres = {
+            receitas: [],
+            gastos: [],
+            assinaturas: [],
+            parcelamentos: [],
+            poupanca: [],
+            dividas: {
+                aReceber: [],
+                aPagar: []
+            }
+        };
+
+        // SISTEMA DE IDs ULTRA-ROBUSTO - UUID Style
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        
+        // Alias para compatibilidade
+        const generateUniqueId = generateUUID;
+        
+        // ========================================
+        // FUNÇÕES CORE - NOVA ARQUITETURA
+        // ========================================
+        
+        // Calcular diferença entre meses em formato 'YYYY-M'
+        function calcularDiferencaMeses(mesInicio, mesFim) {
+            const [anoInicio, mesI] = mesInicio.split('-').map(Number);
+            const [anoFim, mesF] = mesFim.split('-').map(Number);
+            return (anoFim - anoInicio) * 12 + (mesF - mesI);
+        }
+        
+        // Pegar versão/valor de um item para um mês específico
+        function mesToIndex(mesKey) {
+  const [y, m] = mesKey.split('-').map(Number);
+  return y * 12 + m; // mês 0-11, como no seu projeto
+}
+
+function mesToIndex(mesKey) {
+  const [y, m] = mesKey.split('-').map(Number);
+  return y * 12 + m;
+}
+
+function mesToIndex(mesKey) {
+  const [y, m] = mesKey.split('-').map(Number);
+  return y * 12 + m;
+}
+
+// Pegar versão/valor de um item para um mês específico
+function mesToIndex(mesKey) {
+  const [y, m] = mesKey.split('-').map(Number);
+  return y * 12 + m;
+}
+
+function getVersaoParaMes(item, mesKey) {
+  if (!item || !item.historico) return item || null;
+
+  const alvo = mesToIndex(mesKey);
+
+  let ultima = null;
+
+  // IMPORTANTÍSSIMO: percorre na ordem do histórico.
+  // Assim, se houver duas versões no mesmo mês, a última inserida vence.
+  for (const v of item.historico) {
+    if (!v || !v.inicio) continue;
+    if (mesToIndex(v.inicio) <= alvo) {
+      ultima = v;
+    }
+  }
+
+  if (!ultima) return null;
+  if (ultima.ativo === false) return null;
+
+  return ultima;
+}
+        
+        // FUNÇÃO PRINCIPAL: Gerar dados completos para um mês
+        function gerarDadosDoMes(mesKey) {
+            const dados = {
+                receitas: [],
+                gastos: [],
+                assinaturas: [],
+                parcelamentos: [],
+                poupanca: [],
+                dividas: {
+                    aReceber: [],
+                    aPagar: []
+                }
+            };
+            
+            // RECEITAS
+            regrasMestres.receitas.forEach(receita => {
+                const versao = getVersaoParaMes(receita, mesKey);
+                if (versao) {
+                    dados.receitas.push({
+                        id: receita.id,
+                        fonte: receita.fonte,
+                        valor: versao.valor
+                    });
+                }
+            });
+            
+            // GASTOS
+            regrasMestres.gastos.forEach(gasto => {
+                const versao = getVersaoParaMes(gasto, mesKey);
+                if (versao) {
+                    dados.gastos.push({
+                        id: gasto.id,
+                        categoria: gasto.categoria,
+                        macro: gasto.macro,
+                        resp: gasto.resp,
+                        valor: versao.valor
+                    });
+                }
+            });
+            
+            // ASSINATURAS
+            regrasMestres.assinaturas.forEach(assinatura => {
+                const versao = getVersaoParaMes(assinatura, mesKey);
+                if (versao) {
+                    dados.assinaturas.push({
+                        id: assinatura.id,
+                        servico: assinatura.servico,
+                        valor: versao.valor
+                    });
+                }
+            });
+            
+            // PARCELAMENTOS
+            regrasMestres.parcelamentos.forEach(parc => {
+                if (parc.ativo === false) return;
+                if (parc.inicio > mesKey) return;
+                
+                const diff = calcularDiferencaMeses(parc.inicio, mesKey);
+                const parcelaAtual = diff + 1;
+                
+                if (parcelaAtual <= parc.totalParcelas) {
+                    dados.parcelamentos.push({
+                        id: parc.id,
+                        item: parc.item,
+                        atual: parcelaAtual,
+                        total: parc.totalParcelas,
+                        valor: parc.valorParcela
+                    });
+                }
+            });
+            
+            // POUPANÇA
+            regrasMestres.poupanca.forEach(p => {
+                const versao = getVersaoParaMes(p, mesKey);
+                if (versao) {
+                    dados.poupanca.push({
+                        id: p.id,
+                        nome: p.nome,
+                        meta: versao.meta,
+                        realizado: versao.realizado || 0
+                    });
+                }
+            });
+            
+            // DÍVIDAS A RECEBER
+            regrasMestres.dividas.aReceber.forEach(d => {
+                const versao = getVersaoParaMes(d, mesKey);
+                if (versao) {
+                    dados.dividas.aReceber.push({
+                        id: d.id,
+                        pessoa: d.pessoa,
+                        descricao: d.descricao,
+                        valor: versao.valor
+                    });
+                }
+            });
+            
+            // DÍVIDAS A PAGAR
+            regrasMestres.dividas.aPagar.forEach(d => {
+                const versao = getVersaoParaMes(d, mesKey);
+                if (versao) {
+                    dados.dividas.aPagar.push({
+                        id: d.id,
+                        pessoa: d.pessoa,
+                        descricao: d.descricao,
+                        valor: versao.valor
+                    });
+                }
+            });
+            
+            return dados;
+        }
+        
+        // Função para gerar ID numérico único e garantido
+        function gerarIdUnico(arrayExistente) {
+            let novoId = Date.now() + Math.floor(Math.random() * 10000);
+            // Garantir que não existe
+            let tentativas = 0;
+            while (arrayExistente.some(item => item.id === novoId) && tentativas < 100) {
+                novoId++;
+                tentativas++;
+            }
+            return novoId;
+        }
+
+        function getMonthKey() {
+            return `${currentYear}-${currentMonth}`;
+        }
+
+        function getPreviousMonthKey() {
+            let prevMonth = currentMonth - 1;
+            let prevYear = currentYear;
+            if (prevMonth < 0) {
+                prevMonth = 11;
+                prevYear--;
+            }
+            return `${prevYear}-${prevMonth}`;
+        }
+
+        function getCurrentData() {
+            // NOVA ARQUITETURA: Gerar dados sob demanda
+            return gerarDadosDoMes(getMonthKey());
+        }
+
+        function saveData() {
+            localStorage.setItem('financeProDefinitivo', JSON.stringify(regrasMestres));
+            console.log('💾 Regras mestres salvas!');
+        }
+        
+        function loadData() {
+            const data = localStorage.getItem('financeProDefinitivo');
+            if (data) {
+                regrasMestres = JSON.parse(data);
+                console.log('✅ Regras mestres carregadas!', regrasMestres);
+            } else {
+                // Tentar migrar dados antigos
+                migrarDadosAntigos();
+            }
+        }
+        
+        // FUNÇÃO DE MIGRAÇÃO - Converter dados antigos para nova arquitetura
+        function migrarDadosAntigos() {
+            const dadosAntigos = localStorage.getItem('financeDataAll');
+            if (!dadosAntigos) {
+                console.log('📝 Iniciando com regras vazias');
+                return;
+            }
+            
+            console.log('🔄 MIGRANDO dados antigos para nova arquitetura...');
+            const allDataAntigo = JSON.parse(dadosAntigos);
+            const meses = Object.keys(allDataAntigo).sort();
+            
+            if (meses.length === 0) {
+                console.log('📝 Nenhum dado antigo para migrar');
+                return;
+            }
+            
+            // Mapear todos os itens únicos por ID
+            const receitasMap = new Map();
+            const gastosMap = new Map();
+            const assinaturasMap = new Map();
+            const parcelamentosMap = new Map();
+            const poupancaMap = new Map();
+            const dividasReceberMap = new Map();
+            const dividasPagarMap = new Map();
+            
+            // Processar cada mês
+            meses.forEach(mesKey => {
+                const mesData = allDataAntigo[mesKey];
+                
+                // RECEITAS
+                if (mesData.receitas) {
+                    mesData.receitas.forEach(r => {
+                        const chave = r.fonte; // Agrupar por fonte
+                        if (!receitasMap.has(chave)) {
+                            receitasMap.set(chave, {
+                                id: generateUUID(),
+                                fonte: r.fonte,
+                                historico: []
+                            });
+                        }
+                        receitasMap.get(chave).historico.push({
+                            valor: r.valor,
+                            inicio: mesKey,
+                            ativo: true
+                        });
+                    });
+                }
+                
+                // GASTOS
+                if (mesData.gastos) {
+                    mesData.gastos.forEach(g => {
+                        const chave = `${g.categoria}-${g.macro}-${g.resp}`;
+                        if (!gastosMap.has(chave)) {
+                            gastosMap.set(chave, {
+                                id: generateUUID(),
+                                categoria: g.categoria,
+                                macro: g.macro,
+                                resp: g.resp,
+                                historico: []
+                            });
+                        }
+                        gastosMap.get(chave).historico.push({
+                            valor: g.valor,
+                            inicio: mesKey,
+                            ativo: true
+                        });
+                    });
+                }
+                
+                // ASSINATURAS
+                if (mesData.assinaturas) {
+                    mesData.assinaturas.forEach(a => {
+                        const chave = a.servico;
+                        if (!assinaturasMap.has(chave)) {
+                            assinaturasMap.set(chave, {
+                                id: generateUUID(),
+                                servico: a.servico,
+                                historico: []
+                            });
+                        }
+                        assinaturasMap.get(chave).historico.push({
+                            valor: a.valor,
+                            inicio: mesKey,
+                            ativo: true
+                        });
+                    });
+                }
+                
+                // PARCELAMENTOS - Pegar apenas do primeiro mês onde aparecem
+                if (mesData.parcelamentos) {
+                    mesData.parcelamentos.forEach(p => {
+                        const chave = `${p.item}-${p.total}`;
+                        if (!parcelamentosMap.has(chave)) {
+                            parcelamentosMap.set(chave, {
+                                id: generateUUID(),
+                                item: p.item,
+                                valorParcela: p.valor,
+                                totalParcelas: p.total,
+                                inicio: mesKey,
+                                ativo: true
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // Converter Maps para Arrays
+            regrasMestres.receitas = Array.from(receitasMap.values());
+            regrasMestres.gastos = Array.from(gastosMap.values());
+            regrasMestres.assinaturas = Array.from(assinaturasMap.values());
+            regrasMestres.parcelamentos = Array.from(parcelamentosMap.values());
+            
+            // Salvar nova estrutura
+            saveData();
+            
+            console.log('✅ Migração concluída!');
+            
+            // Fazer backup dos dados antigos
+            localStorage.setItem('financeDataAll_BACKUP', dadosAntigos);
+            console.log('💾 Backup dos dados antigos criado: financeDataAll_BACKUP');
+        }
+
+        function saveAllData() {
+            // Alias para compatibilidade
+            saveData();
+        }
+
+        function formatMoney(value) {
+            return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        function getMonthName(month) {
+            const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            return months[month];
+        }
+
+        function updateMonthDisplay() {
+            document.getElementById('current-month').textContent = `${getMonthName(currentMonth)} ${currentYear}`;
+        }
+
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            } else if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            
+            updateMonthDisplay();
+            
+            // NOVA ARQUITETURA: Não precisa copiar, apenas renderizar!
+            // Os dados são gerados sob demanda
+            console.log('📅 Mudando para:', getMonthKey());
+            
+            renderAll();
+        }
+
+        function calcularTotais() {
+            const dados = getCurrentData();
+            const totalReceitas = dados.receitas.reduce((sum, r) => sum + parseFloat(r.valor), 0);
+            const totalFixos = dados.gastos.reduce((sum, g) => sum + parseFloat(g.valor), 0);
+            const totalAssinaturas = dados.assinaturas.reduce((sum, a) => sum + parseFloat(a.valor), 0);
+            const totalParcelamentos = dados.parcelamentos.reduce((sum, p) => sum + parseFloat(p.valor), 0);
+            const totalDespesas = totalFixos + totalAssinaturas + totalParcelamentos;
+            const saldo = totalReceitas - totalDespesas;
+
+            const totalGuardado = dados.poupanca.reduce((sum, p) => sum + parseFloat(p.realizado || 0), 0);
+            const percGuardado = totalReceitas > 0 ? ((totalGuardado / totalReceitas) * 100) : 0;
+
+            const totalReceber = dados.dividas.aReceber.reduce((sum, d) => sum + parseFloat(d.valor), 0);
+            const totalPagar = dados.dividas.aPagar.reduce((sum, d) => sum + parseFloat(d.valor), 0);
+            const saldoDividas = totalReceber - totalPagar;
+
+            return {
+                totalReceitas,
+                totalFixos,
+                totalAssinaturas,
+                totalParcelamentos,
+                totalDespesas,
+                saldo,
+                totalGuardado,
+                percGuardado,
+                totalReceber,
+                totalPagar,
+                saldoDividas
+            };
+        }
+
+        function updateOverview() {
+            const totais = calcularTotais();
+            
+            document.getElementById('total-receitas').textContent = formatMoney(totais.totalReceitas);
+            document.getElementById('total-despesas').textContent = formatMoney(totais.totalDespesas);
+            document.getElementById('saldo-mes').textContent = formatMoney(totais.saldo);
+            document.getElementById('saldo-mes').style.color = totais.saldo >= 0 ? '#3b82f6' : '#ef4444';
+            document.getElementById('total-guardado').textContent = formatMoney(totais.totalGuardado);
+            document.getElementById('perc-guardado').textContent = totais.percGuardado.toFixed(1) + '% guardado';
+            
+            const percDespesas = totais.totalReceitas > 0 ? ((totais.totalDespesas / totais.totalReceitas) * 100).toFixed(0) : 0;
+            document.getElementById('perc-despesas').textContent = `⚠️ ${percDespesas}% da renda`;
+            
+            document.getElementById('saldo-status').textContent = totais.saldo >= 0 ? '✓ Positivo' : '⚠️ Negativo';
+            document.getElementById('saldo-status').className = totais.saldo >= 0 ? 'badge badge-success' : 'badge badge-warning';
+
+            document.getElementById('valor-fixos').textContent = formatMoney(totais.totalFixos);
+            document.getElementById('valor-assinaturas').textContent = formatMoney(totais.totalAssinaturas);
+            document.getElementById('valor-parcelamentos').textContent = formatMoney(totais.totalParcelamentos);
+            
+            if (totais.totalDespesas > 0) {
+                document.getElementById('perc-fixos').textContent = ((totais.totalFixos / totais.totalDespesas) * 100).toFixed(1) + '% do total';
+                document.getElementById('perc-assinaturas').textContent = ((totais.totalAssinaturas / totais.totalDespesas) * 100).toFixed(1) + '% do total';
+                document.getElementById('perc-parcelamentos').textContent = ((totais.totalParcelamentos / totais.totalDespesas) * 100).toFixed(1) + '% do total';
+            }
+
+            document.getElementById('total-assinaturas-display').textContent = formatMoney(totais.totalAssinaturas);
+            document.getElementById('total-parcelamentos-display').textContent = formatMoney(totais.totalParcelamentos);
+            
+            const percParc = totais.totalReceitas > 0 ? ((totais.totalParcelamentos / totais.totalReceitas) * 100).toFixed(1) : 0;
+            document.getElementById('perc-parcelamentos-renda').textContent = percParc + '% da renda';
+
+            document.getElementById('total-receber').textContent = formatMoney(totais.totalReceber);
+            document.getElementById('total-pagar').textContent = formatMoney(totais.totalPagar);
+            document.getElementById('saldo-dividas').textContent = formatMoney(totais.saldoDividas);
+            document.getElementById('saldo-dividas').style.color = totais.saldoDividas >= 0 ? '#10b981' : '#ef4444';
+            
+            // Status dos Parcelamentos
+            const dados = getCurrentData();
+            const totalAtivos = dados.parcelamentos.length;
+            let finalizandoMes = 0;
+            let somaProgressos = 0;
+            
+            dados.parcelamentos.forEach(p => {
+                if (p.atual === p.total) {
+                    finalizandoMes++;
+                }
+                const progresso = (p.atual / p.total) * 100;
+                somaProgressos += progresso;
+            });
+            
+            const progressoMedio = totalAtivos > 0 ? (somaProgressos / totalAtivos).toFixed(1) : 0;
+            
+            document.getElementById('total-parcelamentos-ativos').textContent = totalAtivos;
+            document.getElementById('total-finalizando').textContent = finalizandoMes;
+            document.getElementById('progresso-medio').textContent = progressoMedio + '%';
+        }
+
+        // Renderizar Poupança
+        function renderPoupanca() {
+            const dados = getCurrentData();
+            const lista = document.getElementById('lista-poupanca');
+            lista.innerHTML = '';
+
+            if (dados.poupanca.length === 0) {
+                lista.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💎</div><p>Nenhuma pessoa cadastrada na poupança.</p><p style="font-size: 0.875rem; margin-top: 0.5rem;">Clique em "+ Adicionar Pessoa" para começar!</p></div>';
+                return;
+            }
+
+            dados.poupanca.forEach((pessoa, index) => {
+                const percent = pessoa.meta > 0 ? ((pessoa.realizado / pessoa.meta) * 100) : 0;
+                const gradients = [
+                    'linear-gradient(90deg, #8b5cf6, #ec4899)',
+                    'linear-gradient(90deg, #ec4899, #8b5cf6)',
+                    'linear-gradient(90deg, #3b82f6, #8b5cf6)',
+                    'linear-gradient(90deg, #10b981, #3b82f6)'
+                ];
+                const gradient = gradients[index % gradients.length];
+
+                const div = document.createElement('div');
+                div.className = 'card poupanca-card';
+                
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 1.5rem; font-weight: 700;">👤 ${pessoa.nome}</h3>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-warning tooltip" data-tooltip="Editar">
+                                <svg class="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                            </button>
+                            <button class="btn btn-sm btn-danger tooltip" data-tooltip="Excluir">
+                                <svg class="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="meta-realizado">
+                        <div>
+                            <div style="font-size: 0.875rem; color: #94a3b8;">META DO MÊS</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #3b82f6;">${formatMoney(pessoa.meta)}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.875rem; color: #94a3b8;">REALIZADO</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">${formatMoney(pessoa.realizado)}</div>
+                        </div>
+                    </div>
+
+                    <div class="progress-bar" style="height: 12px;">
+                        <div class="progress-fill" style="width: ${Math.min(100, percent)}%; background: ${gradient};"></div>
+                    </div>
+                    <div style="margin-top: 0.5rem; font-size: 0.875rem; color: #94a3b8; text-align: center;">${percent.toFixed(1)}% da meta</div>
+                `;
+                
+                // Adicionar event listeners
+                const btnEdit = div.querySelector('.btn-warning');
+                const btnDelete = div.querySelector('.btn-danger');
+                
+                btnEdit.addEventListener('click', () => editPessoaPoupanca(pessoa));
+                btnDelete.addEventListener('click', () => confirmarExclusao('poupanca', pessoa.id, pessoa.nome));
+                
+                lista.appendChild(div);
+            });
+
+            const totalMeta = dados.poupanca.reduce((sum, p) => sum + parseFloat(p.meta), 0);
+            const totalRealizado = dados.poupanca.reduce((sum, p) => sum + parseFloat(p.realizado), 0);
+            const totalPercent = totalMeta > 0 ? ((totalRealizado / totalMeta) * 100) : 0;
+
+            document.getElementById('total-meta-geral').textContent = formatMoney(totalMeta);
+            document.getElementById('total-realizado-geral').textContent = formatMoney(totalRealizado);
+            document.getElementById('total-percent-geral').textContent = totalPercent.toFixed(1) + '%';
+            document.getElementById('total-progress-geral').style.width = Math.min(100, totalPercent) + '%';
+        }
+
+        // Renderizar Dívidas
+        function renderDividas() {
+            const dados = getCurrentData();
+            
+            const listaReceber = document.getElementById('lista-dividas-receber');
+            if (dados.dividas.aReceber.length === 0) {
+                listaReceber.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💚</div><p>Ninguém te deve ainda!</p></div>';
+            } else {
+                listaReceber.innerHTML = '';
+                dados.dividas.aReceber.forEach(d => {
+                    const div = document.createElement('div');
+                    div.className = 'list-item divida-receber';
+                    
+                    div.innerHTML = `
+                        <div>
+                            <div style="font-weight: 600;">${d.pessoa}</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8;">${d.descricao}</div>
+                        </div>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div style="font-weight: 700; color: #10b981;">${formatMoney(d.valor)}</div>
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-warning tooltip" data-tooltip="Editar">
+                                    <svg class="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                </button>
+                                <button class="btn btn-sm btn-danger tooltip" data-tooltip="Excluir">
+                                    <svg class="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Adicionar event listeners
+                    const btnEdit = div.querySelector('.btn-warning');
+                    const btnDelete = div.querySelector('.btn-danger');
+                    
+                    btnEdit.addEventListener('click', () => editDividaReceber(d));
+                    btnDelete.addEventListener('click', () => confirmarExclusao('divida-receber', d.id, d.pessoa));
+                    
+                    listaReceber.appendChild(div);
+                });
+            }
+
+            const listaPagar = document.getElementById('lista-dividas-pagar');
+            if (dados.dividas.aPagar.length === 0) {
+                listaPagar.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❤️</div><p>Você não deve para ninguém!</p></div>';
+            } else {
+                listaPagar.innerHTML = '';
+                dados.dividas.aPagar.forEach(d => {
+                    const div = document.createElement('div');
+                    div.className = 'list-item divida-pagar';
+                    
+                    div.innerHTML = `
+                        <div>
+                            <div style="font-weight: 600;">${d.pessoa}</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8;">${d.descricao}</div>
+                        </div>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div style="font-weight: 700; color: #ef4444;">${formatMoney(d.valor)}</div>
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-warning tooltip" data-tooltip="Editar">
+                                    <svg class="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                </button>
+                                <button class="btn btn-sm btn-danger tooltip" data-tooltip="Excluir">
+                                    <svg class="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Adicionar event listeners
+                    const btnEdit = div.querySelector('.btn-warning');
+                    const btnDelete = div.querySelector('.btn-danger');
+                    
+                    btnEdit.addEventListener('click', () => editDividaPagar(d));
+                    btnDelete.addEventListener('click', () => confirmarExclusao('divida-pagar', d.id, d.pessoa));
+                    
+                    listaPagar.appendChild(div);
+                });
+            }
+
+            const totalReceber = dados.dividas.aReceber.reduce((sum, d) => sum + parseFloat(d.valor), 0);
+            const totalPagar = dados.dividas.aPagar.reduce((sum, d) => sum + parseFloat(d.valor), 0);
+            document.getElementById('total-receber-display').textContent = formatMoney(totalReceber);
+            document.getElementById('total-pagar-display').textContent = formatMoney(totalPagar);
+        }
+
+        // FUNÇÕES SALVAR - POUPANÇA
+        function savePessoaPoupanca(e) {
+            e.preventDefault();
+            const mesAtual = getMonthKey();
+            const id = document.getElementById('pessoa-poupanca-id').value;
+            const nome = document.getElementById('pessoa-poupanca-nome').value;
+            const meta = parseFloat(document.getElementById('pessoa-poupanca-meta').value);
+            const realizado = parseFloat(document.getElementById('pessoa-poupanca-realizado').value);
+            
+           if (id) {
+  const poupanca = regrasMestres.poupanca.find(p => p.id === id);
+  if (poupanca) {
+    // ✅ Atualiza o nome (campo identitário)
+    poupanca.nome = nome;
+
+    // ✅ Mantém histórico de meta/realizado
+    poupanca.historico.push({
+      meta: meta,
+      realizado: realizado,
+      inicio: mesAtual,
+      ativo: true
+    });
+  }
+            } else {
+                // ADICIONAR
+                regrasMestres.poupanca.push({
+                    id: generateUUID(),
+                    nome: nome,
+                    historico: [{
+                        meta: meta,
+                        realizado: realizado || 0,
+                        inicio: mesAtual,
+                        ativo: true
+                    }]
+                });
+                console.log(`➕ Poupança de "${nome}" adicionada! Meta R$ ${meta} a partir de ${mesAtual}`);
+            }
+            
+            saveData();
+            renderAll();
+            closeModal('add-pessoa-poupanca');
+            e.target.reset();
+            
+            mostrarFeedback(`✅ Poupança ${id ? 'atualizada' : 'adicionada'} com sucesso!`, 'success');
+        }
+
+        function editPessoaPoupanca(item) {
+            document.getElementById('modal-pessoa-poupanca-title').textContent = 'Editar Pessoa - Poupança';
+            document.getElementById('pessoa-poupanca-id').value = item.id;
+            document.getElementById('pessoa-poupanca-nome').value = item.nome;
+            document.getElementById('pessoa-poupanca-meta').value = item.meta;
+            document.getElementById('pessoa-poupanca-realizado').value = item.realizado;
+            openModal('add-pessoa-poupanca');
+        }
+
+        // Modal de confirmação elegante
+        function confirmarExclusao(tipo, id, nome) {
+            const modal = document.createElement('div');
+            modal.className = 'modal active';
+            modal.innerHTML = `
+                <div class="modal-content confirm-modal" style="max-width: 400px;">
+                    <div class="icon">🗑️</div>
+                    <h3>Confirmar Exclusão</h3>
+                    <p>Tem certeza que deseja excluir <strong>"${nome}"</strong>?<br>Esta ação não pode ser desfeita.</p>
+                    <div class="confirm-buttons">
+                        <button class="btn btn-danger" id="confirm-delete">
+                            <svg class="btn-icon" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                            Sim, excluir
+                        </button>
+                        <button class="btn" id="cancel-delete" style="background: linear-gradient(135deg, #64748b, #475569);">
+                            <svg class="btn-icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            document.getElementById('confirm-delete').addEventListener('click', () => {
+                executarExclusao(tipo, id);
+                document.body.removeChild(modal);
+            });
+            
+            document.getElementById('cancel-delete').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            // Fechar ao clicar fora
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            });
+        }
+        
+        function executarExclusao(tipo, id) {
+    const mesAtual = getMonthKey();
+
+    // dados do mês atual (ajuste aqui se o seu objeto principal tiver outro nome)
+    const dadosMes = getCurrentData(); // se no seu código estiver allData[mesAtual], troque para allData[mesAtual]
+
+    switch (tipo) {
+        case 'parcelamento': {
+            const parc = regrasMestres.parcelamentos.find(p => p.id === id);
+            if (parc) {
+                parc.ativo = false;
+                console.log(`🗑️ Parcelamento "${parc.item}" desativado a partir de ${mesAtual}`);
+            }
+            if (dadosMes && Array.isArray(dadosMes.parcelamentos)) {
+                dadosMes.parcelamentos = dadosMes.parcelamentos.filter(p => p.id !== id);
+            }
+            break;
+        }
+
+        case 'poupanca': {
+            const poup = regrasMestres.poupanca.find(p => p.id === id);
+            if (poup) {
+                poup.historico.push({ ativo: false, inicio: mesAtual });
+                console.log(`🗑️ Poupança de "${poup.nome}" desativada a partir de ${mesAtual}`);
+            }
+            if (dadosMes && Array.isArray(dadosMes.poupanca)) {
+                dadosMes.poupanca = dadosMes.poupanca.filter(p => p.id !== id);
+            }
+            break;
+        }
+
+        case 'receita': {
+            const receita = regrasMestres.receitas.find(r => r.id === id);
+            if (receita) {
+                receita.historico.push({ ativo: false, inicio: mesAtual });
+                console.log(`🗑️ Receita "${receita.fonte}" desativada a partir de ${mesAtual}`);
+            }
+            if (dadosMes && Array.isArray(dadosMes.receitas)) {
+                dadosMes.receitas = dadosMes.receitas.filter(r => r.id !== id);
+            }
+            break;
+        }
+
+        case 'gasto': {
+            const gasto = regrasMestres.gastos.find(g => g.id === id);
+            if (gasto) {
+                gasto.historico.push({ ativo: false, inicio: mesAtual });
+                console.log(`🗑️ Gasto "${gasto.categoria}" desativado a partir de ${mesAtual}`);
+            }
+            if (dadosMes && Array.isArray(dadosMes.gastos)) {
+                dadosMes.gastos = dadosMes.gastos.filter(g => g.id !== id);
+            }
+            break;
+        }
+
+        case 'assinatura': {
+            const assinatura = regrasMestres.assinaturas.find(a => a.id === id);
+            if (assinatura) {
+                assinatura.historico.push({ ativo: false, inicio: mesAtual });
+                console.log(`🗑️ Assinatura "${assinatura.servico}" desativada a partir de ${mesAtual}`);
+            }
+            if (dadosMes && Array.isArray(dadosMes.assinaturas)) {
+                dadosMes.assinaturas = dadosMes.assinaturas.filter(a => a.id !== id);
+            }
+            break;
+        }
+
+        case 'divida-receber': {
+            const dividaR = regrasMestres.dividas.aReceber.find(d => d.id === id);
+            if (dividaR) {
+                dividaR.historico.push({ ativo: false, inicio: mesAtual });
+                console.log(`🗑️ Dívida a Receber de "${dividaR.pessoa}" desativada a partir de ${mesAtual}`);
+            }
+            if (dadosMes && dadosMes.dividas && Array.isArray(dadosMes.dividas.aReceber)) {
+                dadosMes.dividas.aReceber = dadosMes.dividas.aReceber.filter(d => d.id !== id);
+            }
+            break;
+        }
+
+        case 'divida-pagar': {
+            const dividaP = regrasMestres.dividas.aPagar.find(d => d.id === id);
+            if (dividaP) {
+                dividaP.historico.push({ ativo: false, inicio: mesAtual });
+                console.log(`🗑️ Dívida a Pagar para "${dividaP.pessoa}" desativada a partir de ${mesAtual}`);
+            }
+            if (dadosMes && dadosMes.dividas && Array.isArray(dadosMes.dividas.aPagar)) {
+                dadosMes.dividas.aPagar = dadosMes.dividas.aPagar.filter(d => d.id !== id);
+            }
+            break;
+        }
+    }
+
+    saveData();
+    renderAll();
+    mostrarFeedback('✅ Item removido deste mês em diante!', 'success');
+}
+
+        
+        function mostrarFeedback(mensagem, tipo = 'success') {
+            const feedback = document.createElement('div');
+            feedback.className = `alert alert-${tipo}`;
+            feedback.style.cssText = 'position: fixed; top: 2rem; right: 2rem; z-index: 2000; min-width: 300px;';
+            feedback.innerHTML = `
+                <span style="font-size: 1.5rem;">${tipo === 'success' ? '✅' : '⚠️'}</span>
+                <div style="flex: 1;">${mensagem}</div>
+            `;
+            
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => {
+                feedback.style.opacity = '0';
+                feedback.style.transform = 'translateX(100%)';
+                setTimeout(() => document.body.removeChild(feedback), 300);
+            }, 3000);
+        }
+
+        function deletePessoaPoupanca(id) {
+            if (confirm('Deseja excluir esta poupança deste mês em diante?')) {
+                const mesAtual = getMonthKey();
+                const poupanca = regrasMestres.poupanca.find(p => p.id === id);
+                if (poupanca) {
+                    poupanca.historico.push({
+                        ativo: false,
+                        inicio: mesAtual
+                    });
+                    console.log(`🗑️ Poupança desativada a partir de ${mesAtual}`);
+                }
+                saveData();
+                renderAll();
+                mostrarFeedback('✅ Poupança removida deste mês em diante!', 'success');
+            }
+        }
+
+        // FUNÇÕES SALVAR - DÍVIDAS
+        function saveDividaReceber(e) {
+            e.preventDefault();
+            const mesAtual = getMonthKey();
+            const id = document.getElementById('divida-receber-id').value;
+            const pessoa = document.getElementById('divida-receber-pessoa').value;
+            const descricao = document.getElementById('divida-receber-descricao').value;
+            const valor = parseFloat(document.getElementById('divida-receber-valor').value);
+            
+           if (id) {
+  const divida = regrasMestres.dividas.aReceber.find(d => d.id === id);
+  if (divida) {
+    // ✅ Atualiza campos identitários
+    divida.pessoa = pessoa;
+    divida.descricao = descricao;
+
+    // ✅ Histórico do valor
+    divida.historico.push({
+      valor: valor,
+      inicio: mesAtual,
+      ativo: true
+    });
+  }
+}
+ else {
+                // ADICIONAR
+                regrasMestres.dividas.aReceber.push({
+                    id: generateUUID(),
+                    pessoa: pessoa,
+                    descricao: descricao,
+                    historico: [{
+                        valor: valor,
+                        inicio: mesAtual,
+                        ativo: true
+                    }]
+                });
+                console.log(`➕ Dívida a Receber de "${pessoa}" adicionada! R$ ${valor} a partir de ${mesAtual}`);
+            }
+            
+            saveData();
+            renderAll();
+            closeModal('add-divida-receber');
+            e.target.reset();
+            
+            mostrarFeedback(`✅ Dívida a Receber ${id ? 'atualizada' : 'adicionada'} com sucesso!`, 'success');
+        }
+
+        function editDividaReceber(item) {
+            document.getElementById('modal-divida-receber-title').textContent = 'Editar Dívida a Receber';
+            document.getElementById('divida-receber-id').value = item.id;
+            document.getElementById('divida-receber-pessoa').value = item.pessoa;
+            document.getElementById('divida-receber-descricao').value = item.descricao;
+            document.getElementById('divida-receber-valor').value = item.valor;
+            openModal('add-divida-receber');
+        }
+
+        function deleteDividaReceber(id) {
+            if (confirm('Deseja excluir esta dívida a receber deste mês em diante?')) {
+                const mesAtual = getMonthKey();
+                const divida = regrasMestres.dividas.aReceber.find(d => d.id === id);
+                if (divida) {
+                    divida.historico.push({
+                        ativo: false,
+                        inicio: mesAtual
+                    });
+                    console.log(`🗑️ Dívida a Receber desativada a partir de ${mesAtual}`);
+                }
+                saveData();
+                renderAll();
+                mostrarFeedback('✅ Dívida a Receber removida deste mês em diante!', 'success');
+            }
+        }
+
+        function saveDividaPagar(e) {
+            e.preventDefault();
+            const mesAtual = getMonthKey();
+            const id = document.getElementById('divida-pagar-id').value;
+            const pessoa = document.getElementById('divida-pagar-pessoa').value;
+            const descricao = document.getElementById('divida-pagar-descricao').value;
+            const valor = parseFloat(document.getElementById('divida-pagar-valor').value);
+            
+            if (id) {
+  const divida = regrasMestres.dividas.aPagar.find(d => d.id === id);
+  if (divida) {
+    // ✅ Atualiza campos identitários
+    divida.pessoa = pessoa;
+    divida.descricao = descricao;
+
+    divida.historico.push({
+      valor: valor,
+      inicio: mesAtual,
+      ativo: true
+    });
+  }
+}
+ else {
+                // ADICIONAR
+                regrasMestres.dividas.aPagar.push({
+                    id: generateUUID(),
+                    pessoa: pessoa,
+                    descricao: descricao,
+                    historico: [{
+                        valor: valor,
+                        inicio: mesAtual,
+                        ativo: true
+                    }]
+                });
+                console.log(`➕ Dívida a Pagar para "${pessoa}" adicionada! R$ ${valor} a partir de ${mesAtual}`);
+            }
+            
+            saveData();
+            renderAll();
+            closeModal('add-divida-pagar');
+            e.target.reset();
+            
+            mostrarFeedback(`✅ Dívida a Pagar ${id ? 'atualizada' : 'adicionada'} com sucesso!`, 'success');
+        }
+
+        function editDividaPagar(item) {
+            document.getElementById('modal-divida-pagar-title').textContent = 'Editar Dívida a Pagar';
+            document.getElementById('divida-pagar-id').value = item.id;
+            document.getElementById('divida-pagar-pessoa').value = item.pessoa;
+            document.getElementById('divida-pagar-descricao').value = item.descricao;
+            document.getElementById('divida-pagar-valor').value = item.valor;
+            openModal('add-divida-pagar');
+        }
+
+        function deleteDividaPagar(id) {
+            if (confirm('Deseja excluir esta dívida a pagar deste mês em diante?')) {
+                const mesAtual = getMonthKey();
+                const divida = regrasMestres.dividas.aPagar.find(d => d.id === id);
+                if (divida) {
+                    divida.historico.push({
+                        ativo: false,
+                        inicio: mesAtual
+                    });
+                    console.log(`🗑️ Dívida a Pagar desativada a partir de ${mesAtual}`);
+                }
+                saveData();
+                renderAll();
+                mostrarFeedback('✅ Dívida a Pagar removida deste mês em diante!', 'success');
+            }
+        }
+
+        // Funções de renderização
+        function renderReceitas() {
+            const dados = getCurrentData();
+            const lista = document.getElementById('lista-receitas');
+            
+            if (dados.receitas.length === 0) {
+                lista.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💰</div><p>Nenhuma receita cadastrada.</p></div>';
+                return;
+            }
+            
+            lista.innerHTML = '';
+            const totais = calcularTotais();
+            dados.receitas.forEach(r => {
+                const perc = totais.totalReceitas > 0 ? ((r.valor / totais.totalReceitas) * 100).toFixed(1) : 0;
+                
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                
+                div.innerHTML = `
+                    <div>
+                        <div style="font-weight: 600;">${r.fonte}</div>
+                        <div style="font-size: 0.875rem; color: #94a3b8;">${perc}% da renda total</div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">${formatMoney(r.valor)}</div>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-warning tooltip" data-tooltip="Editar">
+                                <svg class="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                            </button>
+                            <button class="btn btn-sm btn-danger tooltip" data-tooltip="Excluir">
+                                <svg class="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                const btnEdit = div.querySelector('.btn-warning');
+                const btnDelete = div.querySelector('.btn-danger');
+                
+                btnEdit.addEventListener('click', () => editReceita(r));
+                btnDelete.addEventListener('click', () => confirmarExclusao('receita', r.id, r.fonte));
+                
+                lista.appendChild(div);
+            });
+        }
+
+        function renderGastos() {
+            const dados = getCurrentData();
+            const lista = document.getElementById('lista-gastos');
+            
+            if (dados.gastos.length === 0) {
+                lista.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💳</div><p>Nenhum gasto fixo cadastrado.</p></div>';
+                return;
+            }
+            
+            lista.innerHTML = '';
+            dados.gastos.forEach(g => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                
+                div.innerHTML = `
+                    <div>
+                        <div style="font-weight: 600;">${g.categoria}</div>
+                        <div style="font-size: 0.75rem; color: #94a3b8;">${g.macro} • ${g.resp}</div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <div style="font-weight: 700; color: #f59e0b;">${formatMoney(g.valor)}</div>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-warning tooltip" data-tooltip="Editar">
+                                <svg class="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                            </button>
+                            <button class="btn btn-sm btn-danger tooltip" data-tooltip="Excluir">
+                                <svg class="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                const btnEdit = div.querySelector('.btn-warning');
+                const btnDelete = div.querySelector('.btn-danger');
+                
+                btnEdit.addEventListener('click', () => editGasto(g));
+                btnDelete.addEventListener('click', () => confirmarExclusao('gasto', g.id, g.categoria));
+                
+                lista.appendChild(div);
+            });
+        }
+
+        function renderAssinaturas() {
+            const dados = getCurrentData();
+            const lista = document.getElementById('lista-assinaturas');
+            
+            if (dados.assinaturas.length === 0) {
+                lista.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📺</div><p>Nenhuma assinatura cadastrada.</p></div>';
+                return;
+            }
+            
+            lista.innerHTML = '';
+            dados.assinaturas.forEach(a => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                
+                div.innerHTML = `
+                    <div style="font-weight: 600;">${a.servico}</div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <div style="font-weight: 700; color: #8b5cf6;">${formatMoney(a.valor)}</div>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-warning tooltip" data-tooltip="Editar">
+                                <svg class="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                            </button>
+                            <button class="btn btn-sm btn-danger tooltip" data-tooltip="Excluir">
+                                <svg class="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                const btnEdit = div.querySelector('.btn-warning');
+                const btnDelete = div.querySelector('.btn-danger');
+                
+                btnEdit.addEventListener('click', () => editAssinatura(a));
+                btnDelete.addEventListener('click', () => confirmarExclusao('assinatura', a.id, a.servico));
+                
+                lista.appendChild(div);
+            });
+        }
+
+        function renderParcelamentos() {
+            const dados = getCurrentData();
+            const lista = document.getElementById('lista-parcelamentos');
+            
+            
+            if (dados.parcelamentos.length === 0) {
+                lista.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>Nenhum parcelamento cadastrado.</p></div>';
+                return;
+            }
+            
+            lista.innerHTML = '';
+            dados.parcelamentos.forEach(p => {
+                const progresso = (p.atual / p.total) * 100;
+                const finalizando = p.atual === p.total;
+                
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.style.cssText = `display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 1rem; align-items: center; ${finalizando ? 'border: 2px solid #10b981;' : ''}`;
+                
+                div.innerHTML = `
+                    <div>
+                        <div style="font-weight: 600;">${p.item}</div>
+                        ${finalizando ? '<div style="font-size: 0.75rem; color: #10b981;">✓ Última parcela</div>' : ''}
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progresso}%; background: linear-gradient(90deg, ${finalizando ? '#10b981' : '#3b82f6'}, ${finalizando ? '#059669' : '#2563eb'});"></div>
+                    </div>
+                    <div style="text-align: center; font-weight: 600;">${p.atual}/${p.total}</div>
+                    <div style="text-align: right; font-weight: 700; color: #3b82f6;">${formatMoney(p.valor)}</div>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-warning tooltip" data-tooltip="Editar">
+                            <svg class="btn-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        </button>
+                        <button class="btn btn-sm btn-danger tooltip" data-tooltip="Excluir">
+                            <svg class="btn-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                    </div>
+                `;
+                
+                // Adicionar event listeners diretamente
+                const btnEdit = div.querySelector('.btn-warning');
+                const btnDelete = div.querySelector('.btn-danger');
+                
+                btnEdit.addEventListener('click', () => editParcelamento(p));
+                btnDelete.addEventListener('click', () => confirmarExclusao('parcelamento', p.id, p.item));
+                
+                lista.appendChild(div);
+            });
+        }
+
+        function renderCharts() {
+            const totais = calcularTotais();
+            
+            if (charts.despesas) charts.despesas.destroy();
+            const ctxPizza = document.getElementById('chart-despesas').getContext('2d');
+            charts.despesas = new Chart(ctxPizza, {
+                type: 'pie',
+                data: {
+                    labels: ['Gastos Fixos', 'Assinaturas', 'Parcelamentos'],
+                    datasets: [{
+                        data: [totais.totalFixos, totais.totalAssinaturas, totais.totalParcelamentos],
+                        backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#f1f5f9' } } }
+                }
+            });
+
+            if (charts.barras) charts.barras.destroy();
+            const ctxBarras = document.getElementById('chart-barras').getContext('2d');
+            charts.barras = new Chart(ctxBarras, {
+                type: 'bar',
+                data: {
+                    labels: ['Receitas', 'Despesas', 'Saldo'],
+                    datasets: [{
+                        label: 'Valores (R$)',
+                        data: [totais.totalReceitas, totais.totalDespesas, Math.abs(totais.saldo)],
+                        backgroundColor: ['#10b981', '#f59e0b', totais.saldo >= 0 ? '#3b82f6' : '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#f1f5f9' } } },
+                    scales: {
+                        y: { ticks: { color: '#f1f5f9' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                        x: { ticks: { color: '#f1f5f9' }, grid: { color: 'rgba(148,163,184,0.1)' } }
+                    }
+                }
+            });
+
+            const evolucaoLabels = [];
+            const evolucaoReceitas = [];
+            const evolucaoDespesas = [];
+            const evolucaoSaldos = [];
+
+            for (let i = 5; i >= 0; i--) {
+                let m = currentMonth - i;
+                let y = currentYear;
+                while (m < 0) {
+                    m += 12;
+                    y--;
+                }
+                const key = `${y}-${m}`;
+                evolucaoLabels.push(getMonthName(m) + '/' + y);
+                
+                // NOVA ARQUITETURA: gerar dados sob demanda
+                const mesData = gerarDadosDoMes(key);
+                const rec = mesData.receitas.reduce((s, r) => s + parseFloat(r.valor), 0);
+                const fix = mesData.gastos.reduce((s, g) => s + parseFloat(g.valor), 0);
+                const ass = mesData.assinaturas.reduce((s, a) => s + parseFloat(a.valor), 0);
+                const par = mesData.parcelamentos.reduce((s, p) => s + parseFloat(p.valor), 0);
+                const desp = fix + ass + par;
+                evolucaoReceitas.push(rec);
+                evolucaoDespesas.push(desp);
+                evolucaoSaldos.push(rec - desp);
+            }
+
+            if (charts.evolucao) charts.evolucao.destroy();
+            const ctxEvolucao = document.getElementById('chart-evolucao').getContext('2d');
+            charts.evolucao = new Chart(ctxEvolucao, {
+                type: 'line',
+                data: {
+                    labels: evolucaoLabels,
+                    datasets: [
+                        {
+                            label: 'Receitas',
+                            data: evolucaoReceitas,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16,185,129,0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Despesas',
+                            data: evolucaoDespesas,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245,158,11,0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Saldo',
+                            data: evolucaoSaldos,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59,130,246,0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#f1f5f9' } } },
+                    scales: {
+                        y: { ticks: { color: '#f1f5f9' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                        x: { ticks: { color: '#f1f5f9' }, grid: { color: 'rgba(148,163,184,0.1)' } }
+                    }
+                }
+            });
+        }
+
+       function renderPoupancaChart() {
+  const dados = getCurrentData();
+
+  // Verificar se há pessoas cadastradas na poupança
+  if (!dados.poupanca || dados.poupanca.length === 0) {
+    if (charts.poupancaEvolucao) {
+      charts.poupancaEvolucao.destroy();
+      charts.poupancaEvolucao = null;
+    }
+    return;
+  }
+
+  // Verificar se o canvas existe antes de criar o gráfico
+  const canvas = document.getElementById('chart-poupanca-evolucao');
+  if (!canvas) {
+    console.error('Canvas chart-poupanca-evolucao não encontrado!');
+    return;
+  }
+
+  const labels = [];
+  const datasets = [];
+
+  // Labels (últimos 6 meses)
+  for (let i = 5; i >= 0; i--) {
+    let m = currentMonth - i;
+    let y = currentYear;
+    while (m < 0) {
+      m += 12;
+      y--;
+    }
+    labels.push(getMonthName(m) + '/' + y);
+  }
+
+  const pessoas = dados.poupanca.map(p => p.nome);
+
+  // Paleta neon (uma cor por linha)
+  const coresNeon = ['#39ff14', '#00e5ff', '#ff2bd6', '#ffe600', '#b967ff'];
+
+  // Montar datasets (um por pessoa)
+  pessoas.forEach((nome, idx) => {
+    const serie = [];
+
+    for (let i = 5; i >= 0; i--) {
+      let m = currentMonth - i;
+      let y = currentYear;
+      while (m < 0) {
+        m += 12;
+        y--;
+      }
+
+      const key = `${y}-${m}`;
+      const mesData = gerarDadosDoMes(key);
+      const pessoaMes = mesData.poupanca.find(p => p.nome === nome);
+
+      serie.push(pessoaMes ? (pessoaMes.realizado || 0) : 0);
+    }
+
+    datasets.push({
+      label: nome,
+      data: serie,
+      borderColor: coresNeon[idx % coresNeon.length],
+      borderWidth: 3,
+      tension: 0.35,
+      fill: false,
+      pointRadius: 2,
+      pointHoverRadius: 4
+    });
+  });
+
+  // Recriar gráfico
+  if (charts.poupancaEvolucao) charts.poupancaEvolucao.destroy();
+
+  const ctx = canvas.getContext('2d');
+  charts.poupancaEvolucao = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+
+      // melhora leitura do tooltip (mês aparece no título)
+      interaction: { mode: 'index', intersect: false },
+
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: '#f1f5f9', font: { size: 14 } }
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            // garante que o "mês" (label) apareça no topo do tooltip
+            title: (items) => (items && items.length ? items[0].label : ''),
+            label: (ctx) => {
+              const v = Number(ctx.parsed.y || 0);
+              return `${ctx.dataset.label}: R$ ${v.toLocaleString('pt-BR')}`;
+            }
+          }
+        }
+      },
+
+      scales: {
+        y: {
+          ticks: {
+            color: '#f1f5f9',
+            callback: function (value) {
+              return 'R$ ' + Number(value).toLocaleString('pt-BR');
+            }
+          },
+          grid: { color: 'rgba(148,163,184,0.1)' },
+          beginAtZero: true
+        },
+        x: {
+          ticks: { color: '#f1f5f9' },
+          grid: { color: 'rgba(148,163,184,0.1)' }
+        }
+      }
+    }
+  });
+}
+
+
+        function renderAll() {
+            console.log('=== RENDERIZANDO TUDO ===');
+            console.log('Mês atual:', getMonthKey());
+            const dados = getCurrentData();
+            console.log('Parcelamentos no mês:', dados.parcelamentos.length);
+            
+            renderReceitas();
+            renderGastos();
+            renderAssinaturas();
+            renderParcelamentos();
+            renderPoupanca();
+            renderDividas();
+            updateOverview();
+            renderCharts();
+            renderPoupancaChart();
+        }
+
+        // Funções EDITAR
+        function editReceita(item) {
+            document.getElementById('modal-receita-title').textContent = 'Editar Receita';
+            document.getElementById('receita-id').value = item.id;
+            document.getElementById('receita-fonte').value = item.fonte;
+            document.getElementById('receita-valor').value = item.valor;
+            openModal('add-receita');
+        }
+
+        function editGasto(item) {
+            document.getElementById('modal-gasto-title').textContent = 'Editar Gasto';
+            document.getElementById('gasto-id').value = item.id;
+            document.getElementById('gasto-categoria').value = item.categoria;
+            document.getElementById('gasto-macro').value = item.macro;
+            document.getElementById('gasto-resp').value = item.resp;
+            document.getElementById('gasto-valor').value = item.valor;
+            openModal('add-gasto');
+        }
+
+        function editAssinatura(item) {
+            document.getElementById('modal-assinatura-title').textContent = 'Editar Assinatura';
+            document.getElementById('assinatura-id').value = item.id;
+            document.getElementById('assinatura-servico').value = item.servico;
+            document.getElementById('assinatura-valor').value = item.valor;
+            openModal('add-assinatura');
+        }
+
+        function editParcelamento(item) {
+            document.getElementById('modal-parcelamento-title').textContent = 'Editar Parcelamento';
+            document.getElementById('parc-id').value = item.id;
+            document.getElementById('parc-item').value = item.item;
+            document.getElementById('parc-atual').value = item.atual;
+            document.getElementById('parc-total').value = item.total;
+            document.getElementById('parc-valor').value = item.valor;
+            openModal('add-parcelamento');
+        }
+
+       function saveReceita(e) {
+  e.preventDefault();
+  const mesAtual = getMonthKey();
+  const id = document.getElementById('receita-id').value;
+  const valor = parseFloat(document.getElementById('receita-valor').value);
+  const fonte = document.getElementById('receita-fonte').value;
+
+  if (id) {
+    // EDITAR
+    const receita = regrasMestres.receitas.find(r => r.id === id);
+    if (receita) {
+      // ✅ atualiza o "nome"
+      receita.fonte = fonte;
+
+      // mantém histórico de valor
+      receita.historico.push({
+        valor: valor,
+        inicio: mesAtual,
+        ativo: true
+      });
+    }
+  } else {
+    // ADICIONAR
+    regrasMestres.receitas.push({
+      id: generateUUID(),
+      fonte: fonte,
+      historico: [{
+        valor: valor,
+        inicio: mesAtual,
+        ativo: true
+      }]
+    });
+  }
+
+  saveData();
+  renderAll();
+  closeModal('add-receita');
+  e.target.reset();
+
+  mostrarFeedback(`✅ Receita ${id ? 'atualizada' : 'adicionada'} com sucesso!`, 'success');
+}
+
+
+       function saveGasto(e) {
+  e.preventDefault();
+  const mesAtual = getMonthKey();
+  const id = document.getElementById('gasto-id').value;
+  const valor = parseFloat(document.getElementById('gasto-valor').value);
+  const categoria = document.getElementById('gasto-categoria').value;
+  const macro = document.getElementById('gasto-macro').value;
+  const resp = document.getElementById('gasto-resp').value;
+
+  if (id) {
+    const gasto = regrasMestres.gastos.find(g => g.id === id);
+    if (gasto) {
+      // ✅ atualiza os campos de identificação
+      gasto.categoria = categoria;
+      gasto.macro = macro;
+      gasto.resp = resp;
+
+      gasto.historico.push({
+        valor: valor,
+        inicio: mesAtual,
+        ativo: true
+      });
+      console.log(`✏️ Gasto "${categoria}" editado! Novo valor R$ ${valor} a partir de ${mesAtual}`);
+    }
+  } else {
+    regrasMestres.gastos.push({
+      id: generateUUID(),
+      categoria: categoria,
+      macro: macro,
+      resp: resp,
+      historico: [{
+        valor: valor,
+        inicio: mesAtual,
+        ativo: true
+      }]
+    });
+    console.log(`➕ Gasto "${categoria}" adicionado!`);
+  }
+
+  saveData();
+  renderAll();
+  closeModal('add-gasto');
+  e.target.reset();
+
+  mostrarFeedback(`✅ Gasto ${id ? 'atualizado' : 'adicionado'} com sucesso!`, 'success');
+}
+
+
+        function saveAssinatura(e) {
+            e.preventDefault();
+            const mesAtual = getMonthKey();
+            const id = document.getElementById('assinatura-id').value;
+            const valor = parseFloat(document.getElementById('assinatura-valor').value);
+            const servico = document.getElementById('assinatura-servico').value;
+            
+            if (id) {
+  const assinatura = regrasMestres.assinaturas.find(a => a.id === id);
+  if (assinatura) {
+    // ✅ Atualiza o serviço (campo identitário)
+    assinatura.servico = servico;
+
+    assinatura.historico.push({
+      valor: valor,
+      inicio: mesAtual,
+      ativo: true
+    });
+  }
+}
+ else {
+                // ADICIONAR
+                regrasMestres.assinaturas.push({
+                    id: generateUUID(),
+                    servico: servico,
+                    historico: [{
+                        valor: valor,
+                        inicio: mesAtual,
+                        ativo: true
+                    }]
+                });
+                console.log(`➕ Assinatura "${servico}" adicionada! R$ ${valor} a partir de ${mesAtual}`);
+            }
+            
+            saveData();
+            renderAll();
+            closeModal('add-assinatura');
+            e.target.reset();
+            
+            mostrarFeedback(`✅ Assinatura ${id ? 'atualizada' : 'adicionada'} com sucesso!`, 'success');
+        }
+
+        function saveParcelamento(e) {
+            e.preventDefault();
+            const mesAtual = getMonthKey();
+            const id = document.getElementById('parc-id').value;
+            const item = document.getElementById('parc-item').value;
+            const total = parseInt(document.getElementById('parc-total').value);
+            const valor = parseFloat(document.getElementById('parc-valor').value);
+            
+           if (id) {
+  const parc = regrasMestres.parcelamentos.find(p => p.id === id);
+  if (parc) {
+    // ✅ Atualiza o item (campo identitário)
+    parc.item = item;
+
+    // ✅ Atualiza as regras do parcelamento
+    parc.valorParcela = valor;
+    parc.totalParcelas = total;
+
+    // (opcional) manter o início original; não recomendo mudar automaticamente
+    // parc.inicio = mesAtual; // só se você QUISER reiniciar o parcelamento
+  }
+}
+ else {
+                // ADICIONAR
+                regrasMestres.parcelamentos.push({
+                    id: generateUUID(),
+                    item: item,
+                    valorParcela: valor,
+                    totalParcelas: total,
+                    inicio: mesAtual,
+                    ativo: true
+                });
+                console.log(`➕ Parcelamento "${item}" adicionado! ${total}x de R$ ${valor} a partir de ${mesAtual}`);
+            }
+            
+            saveData();
+            renderAll();
+            closeModal('add-parcelamento');
+            e.target.reset();
+            
+            mostrarFeedback(`✅ Parcelamento ${id ? 'atualizado' : 'adicionado'} com sucesso!`, 'success');
+        }
+
+        // Funções DELETE
+        function deleteReceita(id) {
+            if (confirm('Deseja excluir esta receita deste mês em diante?')) {
+                const mesAtual = getMonthKey();
+                const receita = regrasMestres.receitas.find(r => r.id === id);
+                if (receita) {
+                    receita.historico.push({
+                        ativo: false,
+                        inicio: mesAtual
+                    });
+                }
+                saveData();
+                renderAll();
+                mostrarFeedback('✅ Receita removida deste mês em diante!', 'success');
+            }
+        }
+
+        function deleteGasto(id) {
+            if (confirm('Deseja excluir este gasto deste mês em diante?')) {
+                const mesAtual = getMonthKey();
+                const gasto = regrasMestres.gastos.find(g => g.id === id);
+                if (gasto) {
+                    gasto.historico.push({
+                        ativo: false,
+                        inicio: mesAtual
+                    });
+                    console.log(`🗑️ Gasto "${gasto.categoria}" desativado a partir de ${mesAtual}`);
+                }
+                saveData();
+                renderAll();
+                mostrarFeedback('✅ Gasto removido deste mês em diante!', 'success');
+            }
+        }
+
+        function deleteAssinatura(id) {
+            if (confirm('Deseja excluir esta assinatura deste mês em diante?')) {
+                const mesAtual = getMonthKey();
+                const assinatura = regrasMestres.assinaturas.find(a => a.id === id);
+                if (assinatura) {
+                    assinatura.historico.push({
+                        ativo: false,
+                        inicio: mesAtual
+                    });
+                    console.log(`🗑️ Assinatura "${assinatura.servico}" desativada a partir de ${mesAtual}`);
+                }
+                saveData();
+                renderAll();
+                mostrarFeedback('✅ Assinatura removida deste mês em diante!', 'success');
+            }
+        }
+
+        function deleteParcelamento(id) {
+            if (confirm('Deseja excluir este parcelamento deste mês em diante?')) {
+                const mesAtual = getMonthKey();
+                const parc = regrasMestres.parcelamentos.find(p => p.id === id);
+                if (parc) {
+                    parc.ativo = false;
+                    console.log(`🗑️ Parcelamento "${parc.item}" desativado a partir de ${mesAtual}`);
+                }
+                saveData();
+                renderAll();
+                mostrarFeedback('✅ Parcelamento removido deste mês em diante!', 'success');
+            }
+        }
+
+        // Funções de MODAL
+        function openModal(tipo) {
+            if (!document.getElementById('receita-id')?.value && tipo === 'add-receita') {
+                document.getElementById('modal-receita-title').textContent = 'Adicionar Receita';
+            }
+            if (!document.getElementById('gasto-id')?.value && tipo === 'add-gasto') {
+                document.getElementById('modal-gasto-title').textContent = 'Adicionar Gasto Fixo';
+            }
+            if (!document.getElementById('assinatura-id')?.value && tipo === 'add-assinatura') {
+                document.getElementById('modal-assinatura-title').textContent = 'Adicionar Assinatura';
+            }
+            if (!document.getElementById('parc-id')?.value && tipo === 'add-parcelamento') {
+                document.getElementById('modal-parcelamento-title').textContent = 'Adicionar Parcelamento';
+            }
+            if (!document.getElementById('pessoa-poupanca-id')?.value && tipo === 'add-pessoa-poupanca') {
+                document.getElementById('modal-pessoa-poupanca-title').textContent = 'Adicionar Pessoa - Poupança';
+            }
+            if (!document.getElementById('divida-receber-id')?.value && tipo === 'add-divida-receber') {
+                document.getElementById('modal-divida-receber-title').textContent = 'Adicionar Dívida a Receber';
+            }
+            if (!document.getElementById('divida-pagar-id')?.value && tipo === 'add-divida-pagar') {
+                document.getElementById('modal-divida-pagar-title').textContent = 'Adicionar Dívida a Pagar';
+            }
+            document.getElementById(`modal-${tipo}`).classList.add('active');
+        }
+
+        function closeModal(tipo) {
+            document.getElementById(`modal-${tipo}`).classList.remove('active');
+            const form = document.getElementById(`modal-${tipo}`).querySelector('form');
+            if (form) form.reset();
+        }
+
+/* =========================================================
+   MODO ADICIONAR (NÃO SUBSTITUI) — LIMPA IDS + RESETA FORM
+   ========================================================= */
+
+function resetModalForm(tipo) {
+  // tipo: 'add-receita', 'add-gasto', 'add-assinatura', ...
+  const modal = document.getElementById(`modal-${tipo}`);
+  if (!modal) {
+    console.warn(`Modal modal-${tipo} não encontrado`);
+    return;
+  }
+
+  // Reset do formulário
+  const form = modal.querySelector('form');
+  if (form) form.reset();
+
+  // Zerar TODOS os hidden inputs (garante modo "Adicionar")
+  modal.querySelectorAll('input[type="hidden"]').forEach(h => (h.value = ''));
+}
+
+function openAddReceita() {
+  resetModalForm('add-receita');
+  const t = document.getElementById('modal-receita-title');
+  if (t) t.textContent = 'Adicionar Receita';
+  openModal('add-receita');
+}
+
+function openAddGasto() {
+  resetModalForm('add-gasto');
+  const t = document.getElementById('modal-gasto-title');
+  if (t) t.textContent = 'Adicionar Gasto Fixo';
+  openModal('add-gasto');
+}
+
+function openAddAssinatura() {
+  resetModalForm('add-assinatura');
+  const t = document.getElementById('modal-assinatura-title');
+  if (t) t.textContent = 'Adicionar Assinatura';
+  openModal('add-assinatura');
+}
+
+function openAddParcelamento() {
+  resetModalForm('add-parcelamento');
+  const t = document.getElementById('modal-parcelamento-title');
+  if (t) t.textContent = 'Adicionar Parcelamento';
+  openModal('add-parcelamento');
+}
+
+// (se você usa essas abas também)
+function openAddPessoaPoupanca() {
+  resetModalForm('add-pessoa-poupanca');
+  const t = document.getElementById('modal-pessoa-poupanca-title');
+  if (t) t.textContent = 'Adicionar Pessoa - Poupança';
+  openModal('add-pessoa-poupanca');
+}
+
+function openAddDividaReceber() {
+  resetModalForm('add-divida-receber');
+  const t = document.getElementById('modal-divida-receber-title');
+  if (t) t.textContent = 'Adicionar Dívida a Receber';
+  openModal('add-divida-receber');
+}
+
+function openAddDividaPagar() {
+  resetModalForm('add-divida-pagar');
+  const t = document.getElementById('modal-divida-pagar-title');
+  if (t) t.textContent = 'Adicionar Dívida a Pagar';
+  openModal('add-divida-pagar');
+}
+
+/* =========================================================
+   IMPORTANTE:
+   - Não altere seus editXXX(). Eles DEVEM preencher o hidden ID.
+   - Os botões "+ Adicionar" DEVEM chamar openAddXXX() (abaixo).
+   ========================================================= */
+
+        function showTab(tabName, ev) {
+  document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+  document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+
+  document.getElementById(tabName).classList.remove('hidden');
+  if (ev && ev.target) ev.target.classList.add('active');
+
+  if (tabName === 'graficos') setTimeout(() => renderCharts(), 100);
+  if (tabName === 'poupanca') setTimeout(() => renderPoupancaChart(), 100);
+}
+
+        // Inicialização
+        console.log('=== INICIANDO APLICAÇÃO - NOVA ARQUITETURA ===');
+        loadData(); // Carregar regras mestres do localStorage
+        updateMonthDisplay();
+        renderAll();
+
+        // ========================================
+        // PWA - SERVICE WORKER & INSTALAÇÃO
+        // ========================================
+        
+        let deferredPrompt;
+        const installButton = document.getElementById('install-button');
+        
+        // Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('✅ PWA: Service Worker registrado:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('❌ PWA: Falha ao registrar Service Worker:', error);
+                    });
+            });
+        }
+        
+        // Capturar evento de instalação
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installButton) {
+                installButton.style.display = 'block';
+            }
+            console.log('💡 PWA: App pode ser instalado!');
+        });
+        
+        // Instalar app
+        function installApp() {
+            if (!deferredPrompt) {
+                mostrarFeedback('Use o menu do navegador para instalar', 'warning');
+                return;
+            }
+            
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('✅ PWA: Usuário aceitou instalação');
+                    mostrarFeedback('Finance Pro instalado com sucesso! 🎉', 'success');
+                } else {
+                    console.log('❌ PWA: Usuário rejeitou instalação');
+                }
+                deferredPrompt = null;
+                if (installButton) {
+                    installButton.style.display = 'none';
+                }
+            });
+        }
+        
+        // Detectar se já está instalado
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA: Finance Pro foi instalado!');
+            mostrarFeedback('App instalado! Acesse pelo ícone na tela inicial 📱', 'success');
+            if (installButton) {
+                installButton.style.display = 'none';
+            }
+        });
+        
+        // Verificar se está rodando como app instalado
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            console.log('📱 PWA: Rodando como app instalado');
+        }
+    </script>
+    
+    <!-- Botão de Instalação PWA -->
+    <button id="install-button" onclick="installApp()">
+        📱 Instalar App
+    </button>
+</body>
+</html>

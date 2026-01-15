@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Pro - Gerador de Ícones PWA</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(30,41,59,0.7);
+            border-radius: 24px;
+            padding: 2rem;
+            border: 1px solid rgba(148,163,184,0.2);
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            font-size: 1.125rem;
+        }
+        .btn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            display: inline-block;
+            margin: 0.5rem;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(59,130,246,0.4);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .btn-success:hover {
+            box-shadow: 0 8px 30px rgba(16,185,129,0.4);
+        }
+        .preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .icon-preview {
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .icon-preview canvas {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        .icon-size {
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+        .instructions {
+            background: rgba(16,185,129,0.1);
+            border: 1px solid rgba(16,185,129,0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .instructions h3 {
+            color: #10b981;
+            margin-bottom: 1rem;
+        }
+        .instructions ol {
+            margin-left: 1.5rem;
+            line-height: 1.8;
+        }
+        .alert {
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        #status {
+            margin-top: 1rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Finance Pro - Gerador de Ícones</h1>
+        <div class="subtitle">Gere todos os ícones PWA necessários sem instalar nada!</div>
+
+        <div class="alert">
+            ⚡ <strong>Windows:</strong> Este gerador funciona 100% no navegador! Sem precisar Python!
+        </div>
+
+        <div style="margin: 2rem 0;">
+            <button class="btn btn-success" onclick="generateAllIcons()">
+                🎨 Gerar Todos os Ícones
+            </button>
+            <button class="btn" onclick="downloadAllIcons()">
+                📥 Baixar Todos (ZIP)
+            </button>
+        </div>
+
+        <div id="status"></div>
+
+        <div class="preview" id="preview"></div>
+
+        <div class="instructions">
+            <h3>📋 Instruções:</h3>
+            <ol>
+                <li><strong>Clique em "Gerar Todos os Ícones"</strong> - Ícones serão criados automaticamente</li>
+                <li><strong>Clique em cada ícone</strong> para baixar individualmente</li>
+                <li><strong>OU clique em "Baixar Todos"</strong> para baixar tudo de uma vez</li>
+                <li><strong>Crie uma pasta "icons"</strong> na raiz do seu projeto</li>
+                <li><strong>Coloque todos os ícones</strong> baixados dentro da pasta icons/</li>
+                <li><strong>Pronto!</strong> Continue com o deploy no GitHub</li>
+            </ol>
+        </div>
+
+        <div class="alert" style="margin-top: 2rem;">
+            💡 <strong>Dica:</strong> Os ícones são gerados com gradiente verde → azul e o símbolo "$"
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const generatedIcons = {};
+
+        function createGradient(ctx, size) {
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#10b981'); // Verde
+            gradient.addColorStop(1, '#3b82f6'); // Azul
+            return gradient;
+        }
+
+        function generateIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Background com gradiente
+            ctx.fillStyle = createGradient(ctx, size);
+            ctx.fillRect(0, 0, size, size);
+
+            // Adicionar sombra sutil
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = size * 0.05;
+            ctx.shadowOffsetX = size * 0.02;
+            ctx.shadowOffsetY = size * 0.02;
+
+            // Símbolo "$"
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.6}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('$', size / 2, size / 2);
+
+            // Resetar sombra
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+
+            // Adicionar brilho sutil
+            const highlightGradient = ctx.createRadialGradient(
+                size * 0.3, size * 0.3, 0,
+                size * 0.3, size * 0.3, size * 0.7
+            );
+            highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+            highlightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = highlightGradient;
+            ctx.fillRect(0, 0, size, size);
+
+            return canvas;
+        }
+
+        function generateAllIcons() {
+            const preview = document.getElementById('preview');
+            const status = document.getElementById('status');
+            
+            preview.innerHTML = '';
+            status.innerHTML = '<div style="color: #10b981;">⏳ Gerando ícones...</div>';
+
+            sizes.forEach(size => {
+                const canvas = generateIcon(size);
+                generatedIcons[size] = canvas;
+
+                const div = document.createElement('div');
+                div.className = 'icon-preview';
+                
+                const previewCanvas = generateIcon(Math.min(size, 128));
+                div.appendChild(previewCanvas);
+                
+                const sizeLabel = document.createElement('div');
+                sizeLabel.className = 'icon-size';
+                sizeLabel.textContent = `${size}x${size}px`;
+                div.appendChild(sizeLabel);
+
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'btn btn-success';
+                downloadBtn.textContent = '💾 Baixar';
+                downloadBtn.style.fontSize = '0.875rem';
+                downloadBtn.style.padding = '0.5rem 1rem';
+                downloadBtn.style.margin = '0.5rem 0 0 0';
+                downloadBtn.onclick = () => downloadIcon(size);
+                div.appendChild(downloadBtn);
+
+                preview.appendChild(div);
+            });
+
+            status.innerHTML = '<div style="color: #10b981;">✅ Ícones gerados com sucesso! Clique em cada um para baixar.</div>';
+        }
+
+        function downloadIcon(size) {
+            const canvas = generatedIcons[size];
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${size}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        async function downloadAllIcons() {
+            if (Object.keys(generatedIcons).length === 0) {
+                alert('Gere os ícones primeiro clicando em "Gerar Todos os Ícones"!');
+                return;
+            }
+
+            const status = document.getElementById('status');
+            status.innerHTML = '<div style="color: #3b82f6;">⏳ Preparando download...</div>';
+
+            const zip = new JSZip();
+            const folder = zip.folder('icons');
+
+            // Converter todos os canvas para blobs e adicionar ao ZIP
+            const promises = sizes.map(size => {
+                return new Promise((resolve) => {
+                    generatedIcons[size].toBlob(blob => {
+                        folder.file(`icon-${size}.png`, blob);
+                        resolve();
+                    });
+                });
+            });
+
+            await Promise.all(promises);
+
+            // Gerar e baixar ZIP
+            const content = await zip.generateAsync({type: 'blob'});
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'finance-pro-icons.zip';
+            a.click();
+            URL.revokeObjectURL(url);
+
+            status.innerHTML = '<div style="color: #10b981;">✅ Download iniciado! Extraia o ZIP e use os ícones.</div>';
+        }
+
+        // Gerar automaticamente ao carregar
+        window.addEventListener('load', () => {
+            generateAllIcons();
+        });
+    </script>
+</body>
+</html>
