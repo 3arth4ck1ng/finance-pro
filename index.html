@@ -999,33 +999,28 @@
         }
         
         // Pegar versão/valor de um item para um mês específico
-        function mesToIndex(mesKey) {
-  const [y, m] = mesKey.split('-').map(Number);
-  return y * 12 + m; // mês 0-11, como no seu projeto
-}
-
 function mesToIndex(mesKey) {
-  const [y, m] = mesKey.split('-').map(Number);
-  return y * 12 + m;
-}
-
-function mesToIndex(mesKey) {
-  const [y, m] = mesKey.split('-').map(Number);
-  return y * 12 + m;
-}
-
-// Pegar versão/valor de um item para um mês específico
-function mesToIndex(mesKey) {
-  const [y, m] = mesKey.split('-').map(Number);
-  return y * 12 + m;
+  const [y, m] = String(mesKey).split('-').map(Number);
+  return (y * 12) + m; // mês 0-11
 }
 
 function getVersaoParaMes(item, mesKey) {
   if (!item || !item.historico) return item || null;
 
   const alvo = mesToIndex(mesKey);
-
   let ultima = null;
+
+  for (const v of item.historico) {
+    if (!v || !v.inicio) continue;
+    if (mesToIndex(v.inicio) <= alvo) ultima = v;
+  }
+
+  if (!ultima) return null;
+  if (ultima.ativo === false) return null;
+  return ultima;
+}
+
+function getVersaoParaMes(item, mesKey) { if (!item || !item.historico) return item || null; const alvo = mesToIndex(mesKey); let ultima = null;
 
   // IMPORTANTÍSSIMO: percorre na ordem do histórico.
   // Assim, se houver duas versões no mesmo mês, a última inserida vence.
@@ -1094,24 +1089,31 @@ function getVersaoParaMes(item, mesKey) {
                 }
             });
             
-            // PARCELAMENTOS
-            regrasMestres.parcelamentos.forEach(parc => {
-                if (parc.ativo === false) return;
-                if (parc.inicio > mesKey) return;
-                
-                const diff = calcularDiferencaMeses(parc.inicio, mesKey);
-                const parcelaAtual = diff + 1;
-                
-                if (parcelaAtual <= parc.totalParcelas) {
-                    dados.parcelamentos.push({
-                        id: parc.id,
-                        item: parc.item,
-                        atual: parcelaAtual,
-                        total: parc.totalParcelas,
-                        valor: parc.valorParcela
-                    });
-                }
-            });
+            // ========================================
+// PARCELAMENTOS (corrigido: sem negativo e some antes do início)
+// ========================================
+regrasMestres.parcelamentos.forEach(parc => {
+  if (!parc || parc.ativo === false) return;
+
+  const iniIdx = mesToIndex(parc.inicio);
+  const mesIdx = mesToIndex(mesKey);
+
+  // ✅ mês anterior ao início: não mostra (evita atual <= 0)
+  if (mesIdx < iniIdx) return;
+
+  const atual = (mesIdx - iniIdx) + 1;
+
+  // ✅ depois que acabou: não mostra
+  if (atual > parc.totalParcelas) return;
+
+  dados.parcelamentos.push({
+    id: parc.id,
+    item: parc.item,
+    atual: atual,
+    total: parc.totalParcelas,
+    valor: parc.valorParcela
+  });
+});
             
             // POUPANÇA
             regrasMestres.poupanca.forEach(p => {
@@ -1170,7 +1172,23 @@ function getVersaoParaMes(item, mesKey) {
         function getMonthKey() {
             return `${currentYear}-${currentMonth}`;
         }
+function parseMonthKey(key) {
+  const [y, m] = key.split('-').map(Number);
+  return { y, m };
+}
 
+function formatMonthKey(y, m) {
+  return `${y}-${m}`;
+}
+
+// soma (ou subtrai) meses em um monthKey "YYYY-M"
+function addMonthsToKey(monthKey, delta) {
+  let { y, m } = parseMonthKey(monthKey);
+  m += delta;
+  while (m < 0) { m += 12; y--; }
+  while (m > 11) { m -= 12; y++; }
+  return formatMonthKey(y, m);
+}
         function getPreviousMonthKey() {
             let prevMonth = currentMonth - 1;
             let prevYear = currentYear;
@@ -2441,15 +2459,47 @@ function getVersaoParaMes(item, mesKey) {
             openModal('add-assinatura');
         }
 
-        function editParcelamento(item) {
-            document.getElementById('modal-parcelamento-title').textContent = 'Editar Parcelamento';
-            document.getElementById('parc-id').value = item.id;
-            document.getElementById('parc-item').value = item.item;
-            document.getElementById('parc-atual').value = item.atual;
-            document.getElementById('parc-total').value = item.total;
-            document.getElementById('parc-valor').value = item.valor;
-            openModal('add-parcelamento');
-        }
+       // Helper (coloque uma vez no seu script, se ainda não existir)
+function parseMonthKey(mesKey) {
+  const [y, m] = String(mesKey).split('-').map(Number);
+  return { y, m };
+}
+
+function editParcelamento(item) {
+  // item = parcelamento "do mês" (gerado por gerarDadosDoMes)
+  // precisamos pegar o parcelamento mestre para acessar inicio/totalParcelas/valorParcela
+  const mestre = regrasMestres.parcelamentos.find(p => p.id === item.id);
+
+  document.getElementById('modal-parcelamento-title').textContent = 'Editar Parcelamento';
+  document.getElementById('parc-id').value = item.id;
+
+  // Preencher campos com prioridade no "mestre"
+  document.getElementById('parc-item').value = mestre?.item ?? item.item ?? '';
+
+  // Total de parcelas e valor da parcela vêm do mestre
+  const totalParcelas = mestre?.totalParcelas ?? item.total ?? 1;
+  const valorParcela  = mestre?.valorParcela  ?? item.valor ?? 0;
+
+  document.getElementById('parc-total').value = totalParcelas;
+  document.getElementById('parc-valor').value = valorParcela;
+
+  // ✅ Calcular "Parcela atual" corretamente a partir do início do parcelamento
+  const mesAtual = getMonthKey();
+  const inicioKey = mestre?.inicio; // ex: "2026-0"
+
+  let atual = 1;
+  if (inicioKey) {
+    const { y: ay, m: am } = parseMonthKey(mesAtual);
+    const { y: iy, m: im } = parseMonthKey(inicioKey);
+
+    atual = (ay * 12 + am) - (iy * 12 + im) + 1;
+  }
+
+  const elAtual = document.getElementById('parc-atual');
+  if (elAtual) elAtual.value = Math.max(1, atual);
+
+  openModal('add-parcelamento');
+}
 
        function saveReceita(e) {
   e.preventDefault();
@@ -2585,47 +2635,50 @@ function getVersaoParaMes(item, mesKey) {
         }
 
         function saveParcelamento(e) {
-            e.preventDefault();
-            const mesAtual = getMonthKey();
-            const id = document.getElementById('parc-id').value;
-            const item = document.getElementById('parc-item').value;
-            const total = parseInt(document.getElementById('parc-total').value);
-            const valor = parseFloat(document.getElementById('parc-valor').value);
-            
-           if (id) {
-  const parc = regrasMestres.parcelamentos.find(p => p.id === id);
-  if (parc) {
-    // ✅ Atualiza o item (campo identitário)
+  e.preventDefault();
+
+  const mesAtual = getMonthKey();
+
+  const id = document.getElementById('parc-id').value.trim();
+  const item = document.getElementById('parc-item').value.trim();
+  const parcelaAtual = parseInt(document.getElementById('parc-atual').value, 10);
+  const totalParcelas = parseInt(document.getElementById('parc-total').value, 10);
+  const valorParcela = parseFloat(document.getElementById('parc-valor').value);
+
+  if (!item) return mostrarFeedback('⚠️ Informe o item.', 'warning');
+  if (!Number.isFinite(parcelaAtual) || parcelaAtual < 1) return mostrarFeedback('⚠️ Parcela atual inválida.', 'warning');
+  if (!Number.isFinite(totalParcelas) || totalParcelas < 1) return mostrarFeedback('⚠️ Total de parcelas inválido.', 'warning');
+  if (parcelaAtual > totalParcelas) return mostrarFeedback('⚠️ Parcela atual não pode ser maior que o total.', 'warning');
+  if (!Number.isFinite(valorParcela) || valorParcela < 0) return mostrarFeedback('⚠️ Valor da parcela inválido.', 'warning');
+
+  // ✅ retroage o início para que "no mês atual" a parcela seja exatamente a informada
+  const inicioCalculado = addMonthsToKey(mesAtual, -(parcelaAtual - 1));
+
+  if (id) {
+    const parc = regrasMestres.parcelamentos.find(p => p.id === id);
+    if (!parc) return;
+
     parc.item = item;
-
-    // ✅ Atualiza as regras do parcelamento
-    parc.valorParcela = valor;
-    parc.totalParcelas = total;
-
-    // (opcional) manter o início original; não recomendo mudar automaticamente
-    // parc.inicio = mesAtual; // só se você QUISER reiniciar o parcelamento
+    parc.totalParcelas = totalParcelas;
+    parc.valorParcela = valorParcela;
+    parc.inicio = inicioCalculado;
+    parc.ativo = true;
+  } else {
+    regrasMestres.parcelamentos.push({
+      id: generateUUID(),
+      item,
+      totalParcelas,
+      valorParcela,
+      inicio: inicioCalculado,
+      ativo: true
+    });
   }
+
+  saveData();
+  renderAll();
+  closeModal('add-parcelamento');
+  mostrarFeedback(`✅ Parcelamento ${id ? 'atualizado' : 'adicionado'} com sucesso!`, 'success');
 }
- else {
-                // ADICIONAR
-                regrasMestres.parcelamentos.push({
-                    id: generateUUID(),
-                    item: item,
-                    valorParcela: valor,
-                    totalParcelas: total,
-                    inicio: mesAtual,
-                    ativo: true
-                });
-                console.log(`➕ Parcelamento "${item}" adicionado! ${total}x de R$ ${valor} a partir de ${mesAtual}`);
-            }
-            
-            saveData();
-            renderAll();
-            closeModal('add-parcelamento');
-            e.target.reset();
-            
-            mostrarFeedback(`✅ Parcelamento ${id ? 'atualizado' : 'adicionado'} com sucesso!`, 'success');
-        }
 
         // Funções DELETE
         function deleteReceita(id) {
