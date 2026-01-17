@@ -67,70 +67,90 @@ self.addEventListener('activate', (event) => {
 });
 
 // ========================================
-// FETCH - Estratégia: Cache First (Offline First)
+// FETCH - CORRIGIDO: HTML = Network First (não trava atualização)
+//        Assets = Cache First (offline rápido)
 // ========================================
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
   // Ignorar requisições não-GET
-  if (request.method !== 'GET') {
-    return;
-  }
+  if (request.method !== 'GET') return;
 
   // Ignorar requisições de chrome-extension e outras
-  if (!url.protocol.startsWith('http')) {
+  if (!url.protocol.startsWith('http')) return;
+
+  // ✅ Detecta navegação/HTML (inclui /finance-pro/ e index.html)
+  const isHTML =
+    request.mode === 'navigate' ||
+    (request.headers.get('accept') || '').includes('text/html') ||
+    url.pathname === '/finance-pro/' ||
+    url.pathname === '/finance-pro/index.html';
+
+  // ✅ 1) HTML: NETWORK FIRST (evita ficar preso em versão antiga)
+  if (isHTML) {
+    event.respondWith(
+      (async () => {
+        try {
+          console.log('🌐 [SW] HTML Network First:', request.url);
+
+          // força buscar a versão mais nova do HTML
+          const fresh = await fetch(request, { cache: 'no-store' });
+
+          // guarda uma cópia como fallback offline
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(request, fresh.clone());
+
+          return fresh;
+        } catch (err) {
+          console.warn('📦 [SW] HTML Offline fallback:', request.url);
+          const cached = await caches.match(request);
+          return cached || caches.match('/finance-pro/index.html');
+        }
+      })()
+    );
     return;
   }
 
+  // ✅ 2) Assets: CACHE FIRST (rápido/offline)
   event.respondWith(
-    caches.match(request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          console.log('📦 [SW] Cache Hit:', request.url);
-          return cachedResponse;
-        }
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        console.log('📦 [SW] Cache Hit:', request.url);
+        return cachedResponse;
+      }
 
-        // Se não está no cache, buscar da rede
-        console.log('🌐 [SW] Network:', request.url);
-        return fetch(request)
-          .then((response) => {
-            // Não cachear respostas inválidas
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
+      console.log('🌐 [SW] Network:', request.url);
+      return fetch(request)
+        .then((response) => {
+          // Não cachear respostas inválidas
+          if (!response || response.status !== 200) return response;
 
-            // Clonar resposta (só pode ser lida uma vez)
-            const responseToCache = response.clone();
+          const responseToCache = response.clone();
 
-            // Cachear apenas recursos importantes
-            if (shouldCache(request.url)) {
-              caches.open(RUNTIME_CACHE)
-                .then((cache) => {
-                  cache.put(request, responseToCache);
-                  console.log('💾 [SW] Cached:', request.url);
-                });
-            }
-
-            return response;
-          })
-          .catch((error) => {
-            console.error('❌ [SW] Fetch Error:', error);
-            
-            // Retornar página offline se disponível
-            if (request.destination === 'document') {
-              return caches.match('/finance-pro/index.html');
-            }
-            
-            return new Response('Offline - Sem conexão com a internet', {
-              status: 503,
-              statusText: 'Service Unavailable',
-              headers: new Headers({
-                'Content-Type': 'text/plain; charset=UTF-8'
-              })
+          // Cachear apenas recursos importantes
+          if (shouldCache(request.url)) {
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, responseToCache);
+              console.log('💾 [SW] Cached:', request.url);
             });
+          }
+
+          return response;
+        })
+        .catch((error) => {
+          console.error('❌ [SW] Fetch Error:', error);
+
+          // fallback para assets: mensagem simples
+          return new Response('Offline - Sem conexão com a internet', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: new Headers({
+              'Content-Type': 'text/plain; charset=UTF-8'
+            })
           });
-      })
+        });
+    })
   );
 });
 
